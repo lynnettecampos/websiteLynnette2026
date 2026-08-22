@@ -1,13 +1,7 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-
-import {
-  CloudinaryLibraryDialog,
-  type CloudinaryAsset,
-  useCloudinaryPicker,
-} from "@/components/cloudinary/picker";
 
 const LOGIN_COPY = {
   title: "Panel administrativo",
@@ -21,48 +15,12 @@ const LOGIN_COPY = {
     "Si tienes problemas para acceder, contacta al administrador.",
 } as const;
 
-type LoginPageClientProps = {
-  cloudinaryReady: boolean;
-};
-
-export default function LoginPageClient({ cloudinaryReady }: LoginPageClientProps) {
+export default function LoginPageClient() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "pending">("idle");
-  const [libraryMessage, setLibraryMessage] = useState<string | null>(null);
-  const { picker, openPicker, closePicker } = useCloudinaryPicker();
-
-  useEffect(() => {
-    if (!libraryMessage) {
-      return;
-    }
-
-    const timeout = setTimeout(() => setLibraryMessage(null), 8000);
-    return () => clearTimeout(timeout);
-  }, [libraryMessage]);
-
-  const handleAssetSelect = useCallback(
-    async (asset: CloudinaryAsset) => {
-      const label = asset.publicId || asset.url;
-      const fallbackMessage = `Seleccionaste “${label}”. Copia manualmente esta URL segura: ${asset.url}`;
-
-      if (typeof navigator !== "undefined" && navigator.clipboard) {
-        try {
-          await navigator.clipboard.writeText(asset.url);
-          setLibraryMessage(`Copiamos la URL segura de “${label}” al portapapeles.`);
-          return;
-        } catch {
-          // Fall back to manual copy instructions.
-        }
-      }
-
-      setLibraryMessage(fallbackMessage);
-    },
-    [],
-  );
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -151,42 +109,6 @@ export default function LoginPageClient({ cloudinaryReady }: LoginPageClientProp
           </p>
         )}
       </div>
-
-      {cloudinaryReady ? (
-        <section className="space-y-4 rounded-3xl border border-foreground/10 bg-foreground/5 p-6">
-          <header className="space-y-1">
-            <p className="text-sm font-semibold text-foreground/80">Biblioteca de Cloudinary sin entrar</p>
-            <p className="text-sm text-foreground/60">
-              Abre la biblioteca para seleccionar logos o mockups antes de iniciar sesión. Copiaremos automáticamente la URL
-              segura del archivo seleccionado.
-            </p>
-          </header>
-
-          {libraryMessage && (
-            <p className="rounded-2xl border border-foreground/10 bg-background px-4 py-3 text-sm text-foreground/70">
-              {libraryMessage}
-            </p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => openPicker({ onSelect: handleAssetSelect })}
-              className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background transition hover:bg-foreground/90"
-            >
-              Elegir existente
-            </button>
-            <p className="text-xs text-foreground/60">Puedes pegar la URL copiada en cualquier formulario, incluso fuera del panel.</p>
-          </div>
-        </section>
-      ) : (
-        <section className="rounded-3xl border border-blue-200 bg-blue-50 px-6 py-5 text-sm text-blue-900">
-          Añade <code>CLOUDINARY_CLOUD_NAME</code>, <code>CLOUDINARY_API_KEY</code> y <code>CLOUDINARY_API_SECRET</code> en
-          tus variables de entorno para habilitar la biblioteca desde la pantalla de acceso.
-        </section>
-      )}
-
-      {cloudinaryReady && <CloudinaryLibraryDialog state={picker} onClose={closePicker} />}
     </div>
   );
 }

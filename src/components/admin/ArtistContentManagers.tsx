@@ -151,7 +151,7 @@ const requestJson = async <T,>(response: Response, fallback: string): Promise<T>
   return payload as T;
 };
 
-const uploadDocumentToCloudinary = async (file: File, folder: string) => {
+const uploadFileToCloudinary = async (file: File, folder: string) => {
   const signature = await requestJson<{
     uploadUrl: string;
     apiKey: string;
@@ -165,7 +165,7 @@ const uploadDocumentToCloudinary = async (file: File, folder: string) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ folder }),
     }),
-    "No fue posible autorizar la subida del PDF",
+    "No fue posible autorizar la subida del archivo",
   );
 
   const formData = new FormData();
@@ -192,7 +192,7 @@ const uploadDocumentToCloudinary = async (file: File, folder: string) => {
   if (!response.ok || !payload?.public_id || !(payload.secure_url || payload.url)) {
     const cloudinaryMessage =
       typeof payload?.error === "string" ? payload.error : payload?.error?.message;
-    throw new Error(cloudinaryMessage || "No fue posible subir el PDF");
+    throw new Error(cloudinaryMessage || "No fue posible subir el archivo");
   }
 
   return {
@@ -397,29 +397,80 @@ function OptionalImageEditor({
   label,
   value,
   onChange,
+  folder,
   openCloudinaryPicker,
 }: {
   label: string;
   value: ImageDraft;
   onChange: (value: ImageDraft) => void;
+  folder: string;
   openCloudinaryPicker?: OpenCloudinaryPicker;
 }) {
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   return (
     <fieldset className="space-y-4 rounded-2xl border border-foreground/10 bg-foreground/[0.025] p-4">
       <legend className="px-1 text-sm font-semibold text-foreground/80">{label}</legend>
       <div className="flex flex-wrap justify-end gap-2">
         {openCloudinaryPicker ? (
-          <button
-            type="button"
-            onClick={() =>
-              openCloudinaryPicker({
-                onSelect: (asset) => onChange({ ...value, src: asset.url }),
-              })
-            }
-            className={secondaryButtonClassName}
-          >
-            Elegir en Cloudinary
-          </button>
+          <>
+            <label
+              className={`${secondaryButtonClassName} ${
+                isUploading ? "pointer-events-none opacity-45" : "cursor-pointer"
+              }`}
+            >
+              {isUploading ? "Subiendo imagen…" : "Subir imagen"}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={isUploading}
+                onChange={async (event) => {
+                  const input = event.currentTarget;
+                  const file = input.files?.[0];
+                  if (!file) return;
+
+                  if (!file.type.startsWith("image/")) {
+                    setUploadError("Selecciona un archivo de imagen válido.");
+                    input.value = "";
+                    return;
+                  }
+
+                  setIsUploading(true);
+                  setUploadError(null);
+
+                  try {
+                    const uploaded = await uploadFileToCloudinary(file, folder);
+                    onChange({ ...value, src: uploaded.src });
+                  } catch (error) {
+                    setUploadError(
+                      error instanceof Error ? error.message : "No fue posible subir la imagen",
+                    );
+                  } finally {
+                    setIsUploading(false);
+                    input.value = "";
+                  }
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() =>
+                openCloudinaryPicker({
+                  folder,
+                  onSelect: (asset) => {
+                    setUploadError(null);
+                    onChange({ ...value, src: asset.url });
+                  },
+                })
+              }
+              disabled={isUploading}
+              className={secondaryButtonClassName}
+            >
+              Elegir en Cloudinary
+            </button>
+          </>
         ) : null}
         {value.src ? (
           <button
@@ -431,6 +482,12 @@ function OptionalImageEditor({
           </button>
         ) : null}
       </div>
+
+      {uploadError ? (
+        <p role="alert" className="text-sm text-red-700">
+          {uploadError}
+        </p>
+      ) : null}
 
       <label className={labelClassName}>
         <span>URL de imagen</span>
@@ -673,6 +730,7 @@ export function ArtistProfileManager({
           label="Retrato (opcional)"
           value={draft.portrait}
           onChange={(portrait) => setDraft((previous) => ({ ...previous, portrait }))}
+          folder="artist/profile"
           openCloudinaryPicker={openCloudinaryPicker}
         />
         <label className={labelClassName}>
@@ -1018,6 +1076,7 @@ export function ArtistEventsManager({
             label="Imagen (opcional)"
             value={draft.image}
             onChange={(image) => setDraft((previous) => ({ ...previous, image }))}
+            folder={`events/${draft.slug.trim() || "nuevo"}`}
             openCloudinaryPicker={openCloudinaryPicker}
           />
 
@@ -1427,7 +1486,7 @@ export function PublicationsManager({
                       setFeedback(null);
 
                       try {
-                        const uploaded = await uploadDocumentToCloudinary(
+                        const uploaded = await uploadFileToCloudinary(
                           file,
                           `publications/${draft.slug.trim() || "nueva"}/pdf`,
                         );
@@ -1490,6 +1549,7 @@ export function PublicationsManager({
             label="Portada (opcional)"
             value={draft.cover}
             onChange={(cover) => setDraft((previous) => ({ ...previous, cover }))}
+            folder={`publications/${draft.slug.trim() || "nueva"}/cover`}
             openCloudinaryPicker={openCloudinaryPicker}
           />
 
