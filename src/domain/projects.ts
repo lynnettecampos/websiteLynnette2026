@@ -9,6 +9,20 @@ export type ProjectGalleryImage = {
   footnote?: LocaleText;
 };
 
+export type ProjectDescriptionMediaLayout =
+  | "small"
+  | "medium"
+  | "large"
+  | "gallery";
+
+export type ProjectDescriptionBlock = {
+  text: LocaleText;
+  media?: {
+    layout: ProjectDescriptionMediaLayout;
+    images: ProjectGalleryImage[];
+  };
+};
+
 export type ProjectVideoProvider = "youtube" | "vimeo";
 
 export type ProjectVideo = {
@@ -99,18 +113,25 @@ export type Project = {
   year: string;
   startYear?: number;
   endYear?: number;
+  /** When enabled, the visible end year is calculated at render time. */
+  isOngoing?: boolean;
   client: LocalizedValue;
   location: LocalizedValue;
   cover: ProjectGalleryImage;
   gallery: ProjectGalleryImage[];
   video?: ProjectVideo;
-  description: LocaleText[];
+  description: ProjectDescriptionBlock[];
   meta: { label: LocaleText; value: LocalizedValue }[];
   entities: ProjectEntity[];
   isPrivate?: boolean;
 };
 
 export const formatProjectTimeline = (project: Project): string => {
+  if (project.isOngoing) {
+    const currentYear = new Date().getFullYear();
+    return project.startYear ? `${project.startYear} – ${currentYear}` : String(currentYear);
+  }
+
   if (project.startYear && project.endYear) {
     return `${project.startYear} – ${project.endYear}`;
   }

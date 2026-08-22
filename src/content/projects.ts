@@ -7,6 +7,8 @@ import type {
   LocalizedValue,
   Project,
   ProjectCategory,
+  ProjectDescriptionBlock,
+  ProjectDescriptionMediaLayout,
   ProjectEntity,
   ProjectGalleryImage,
   ProjectVideoProvider,
@@ -31,15 +33,16 @@ type ProjectFrontmatter = {
   year?: string;
   startYear?: number;
   endYear?: number;
+  isOngoing?: boolean;
   client?: LocalizedValue;
-  location: LocalizedValue;
+  location?: LocalizedValue;
   cover: ProjectGalleryImage;
   gallery: ProjectGalleryImage[];
   video?: {
     url: string;
     title: LocaleText;
   };
-  description: Record<Locale, string[]>;
+  description: Record<Locale, string[]> | ProjectDescriptionBlock[];
   meta: { label: LocaleText; value: LocalizedValue }[];
   entities?: string[];
   isPrivate?: boolean;
@@ -232,9 +235,34 @@ const parseYearNumber = (value: unknown, field: string): number | undefined => {
 };
 
 const parseDescription = (
-  value: Record<Locale, string[]>,
+  value: Record<Locale, string[]> | ProjectDescriptionBlock[],
   projectName: string,
-): LocaleText[] => {
+): ProjectDescriptionBlock[] => {
+  if (Array.isArray(value)) {
+    return value.map((block, index) => {
+      if (!block || typeof block !== "object" || !("text" in block)) {
+        throw new Error(`Description block ${index + 1} for ${projectName} is invalid`);
+      }
+
+      const media = block.media;
+
+      return {
+        text: parseLocaleText(block.text, `${projectName} description ${index + 1}`),
+        ...(media
+          ? {
+              media: {
+                layout: media.layout as ProjectDescriptionMediaLayout,
+                images: parseGallery(
+                  media.images,
+                  `${projectName} description ${index + 1}`,
+                ),
+              },
+            }
+          : {}),
+      };
+    });
+  }
+
   const es = Array.isArray(value.es) ? value.es : [];
   const en = Array.isArray(value.en) ? value.en : [];
   const length = Math.max(es.length, en.length);
@@ -244,8 +272,10 @@ const parseDescription = (
   }
 
   return Array.from({ length }, (_, index) => ({
-    es: es[index] ?? "",
-    en: en[index] ?? "",
+    text: {
+      es: es[index] ?? "",
+      en: en[index] ?? "",
+    },
   }));
 };
 
@@ -343,11 +373,14 @@ const readProjectFile = (filePath: string): { project: Project; order: number } 
     categories: frontmatter.categories ?? [],
     year: frontmatter.year ?? (startYear && endYear ? `${startYear}–${endYear}` : `${startYear ?? ""}`),
     startYear,
-    endYear,
+    endYear: frontmatter.isOngoing ? undefined : endYear,
+    isOngoing: Boolean(frontmatter.isOngoing),
     client: frontmatter.client
       ? parseLocalizedValue(frontmatter.client, `${frontmatter.slug} client`)
       : "",
-    location: parseLocalizedValue(frontmatter.location, `${frontmatter.slug} location`),
+    location: frontmatter.location
+      ? parseLocalizedValue(frontmatter.location, `${frontmatter.slug} location`)
+      : "",
     cover,
     gallery: parseGallery(frontmatter.gallery, frontmatter.slug),
     video: parseVideo(frontmatter.video, frontmatter.slug),

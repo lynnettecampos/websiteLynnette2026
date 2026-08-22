@@ -66,6 +66,21 @@ export const projectCategorySchema = z.string().trim().min(1);
 
 export const projectImageSchema = clientImageSchema;
 
+const projectDescriptionMediaSchema = z.object({
+  layout: z.enum(["small", "medium", "large", "gallery"]),
+  images: z.array(projectImageSchema).min(1),
+});
+
+const projectDescriptionBlockSchema = z.object({
+  text: localeTextSchema,
+  media: projectDescriptionMediaSchema.optional(),
+});
+
+const projectDescriptionInputSchema = z.union([
+  projectDescriptionBlockSchema,
+  localeTextSchema.transform((text) => ({ text })),
+]);
+
 export const projectMetaSchema = z.object({
   label: localeTextSchema,
   value: localizedValueSchema,
@@ -118,12 +133,13 @@ export const projectPayloadSchema = z
     year: z.string().min(1),
     startYear: z.number().int().optional(),
     endYear: z.number().int().optional(),
+    isOngoing: z.boolean().optional(),
     client: z.union([z.string(), siteLocaleTextSchema]).default(""),
-    location: localizedValueSchema,
+    location: z.union([z.string(), siteLocaleTextSchema]).default(""),
     cover: projectImageSchema,
     gallery: z.array(projectImageSchema).optional(),
     video: projectVideoSchema,
-    description: z.array(localeTextSchema).min(1),
+    description: z.array(projectDescriptionInputSchema).min(1),
     meta: z.array(projectMetaSchema).optional(),
     entities: z.array(z.string().min(1)).optional(),
     order: z.number().int().optional(),

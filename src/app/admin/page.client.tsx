@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import type { Client, ClientKind } from "@/content/clients";
 import type { Service } from "@/content/services";
 import type { ArtistEvent, ArtistProfile, Publication } from "@/domain/artist";
-import type { LocalizedValue, Project, ProjectCategory } from "@/domain/projects";
+import type {
+  LocalizedValue,
+  Project,
+  ProjectCategory,
+  ProjectDescriptionBlock,
+  ProjectDescriptionMediaLayout,
+} from "@/domain/projects";
 import {
   getProjectHomeLabel,
   normalizeProjectHomeColor,
@@ -64,6 +70,8 @@ type ProjectMetaField = {
 type ProjectDescriptionField = {
   id: string;
   text: LocaleField;
+  mediaLayout: ProjectDescriptionMediaLayout | "";
+  images: ImageField[];
 };
 
 type ProjectVideoField = {
@@ -270,10 +278,22 @@ const createMetaField = (id: string, meta?: { label: LocaleText; value: Localize
   value: createLocaleField(meta?.value),
 });
 
-const createDescriptionField = (id: string, text?: LocaleText): ProjectDescriptionField => ({
-  id,
-  text: createLocaleField(text),
-});
+const createDescriptionField = (
+  id: string,
+  value?: LocaleText | ProjectDescriptionBlock,
+): ProjectDescriptionField => {
+  const block = value && "text" in value ? value : undefined;
+  const text = block?.text ?? (value as LocaleText | undefined);
+
+  return {
+    id,
+    text: createLocaleField(text),
+    mediaLayout: block?.media?.layout ?? "",
+    images: (block?.media?.images ?? []).map((image) =>
+      createImageField(randomId(), image),
+    ),
+  };
+};
 
 const createServiceField = (id: string, service?: Service): ServiceField => ({
   id,
@@ -2643,6 +2663,139 @@ const ClientManager = ({
   );
 };
 
+const DescriptionImageEditor = ({
+  image,
+  folder,
+  cloudinaryReady,
+  openCloudinaryPicker,
+  onChange,
+  onRemove,
+  onMessage,
+}: {
+  image: ImageField;
+  folder: string;
+  cloudinaryReady: boolean;
+  openCloudinaryPicker?: (options: CloudinaryPickerOptions) => void;
+  onChange: (image: ImageField) => void;
+  onRemove: () => void;
+  onMessage: (message: string) => void;
+}) => {
+  const update = (changes: Partial<ImageField>) => onChange({ ...image, ...changes });
+
+  return (
+    <div className="space-y-3 rounded-2xl border border-foreground/10 bg-background p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+          Imagen del bloque
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {cloudinaryReady ? (
+            <label className="inline-flex cursor-pointer items-center rounded-full border border-foreground/15 px-3 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+
+                  try {
+                    const result = await uploadToCloudinary(file, folder);
+                    update({ publicId: result.publicId, src: result.src });
+                    onMessage("Imagen del párrafo subida correctamente");
+                  } catch (error) {
+                    console.error(error);
+                    onMessage(
+                      error instanceof Error ? error.message : "Error al subir la imagen",
+                    );
+                  }
+                }}
+              />
+              Subir
+            </label>
+          ) : null}
+          {cloudinaryReady && openCloudinaryPicker ? (
+            <button
+              type="button"
+              onClick={() =>
+                openCloudinaryPicker({
+                  folder,
+                  onSelect: (asset) => {
+                    update({ publicId: asset.publicId, src: asset.url });
+                    onMessage("Imagen del párrafo seleccionada desde Cloudinary");
+                  },
+                })
+              }
+              className="rounded-full border border-foreground/15 px-3 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+            >
+              Elegir existente
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onRemove}
+            className="rounded-full border border-foreground/15 px-3 py-1 text-xs font-semibold text-foreground/70 transition hover:border-red-300 hover:text-red-600"
+          >
+            Quitar
+          </button>
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+          <span>URL</span>
+          <input
+            value={image.src}
+            onChange={(event) => update({ src: event.target.value })}
+            className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm normal-case tracking-normal outline-none transition focus:border-foreground/40 focus:bg-background"
+            placeholder="https://res.cloudinary.com/… o /images/…"
+          />
+        </label>
+        <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+          <span>Public ID</span>
+          <input
+            value={image.publicId}
+            onChange={(event) => update({ publicId: event.target.value })}
+            className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm normal-case tracking-normal outline-none transition focus:border-foreground/40 focus:bg-background"
+          />
+        </label>
+        {(["es", "en"] as const).map((language) => (
+          <label
+            key={`${image.id}-alt-${language}`}
+            className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60"
+          >
+            <span>Alt ({language.toUpperCase()})</span>
+            <input
+              value={image.alt[language]}
+              onChange={(event) =>
+                update({ alt: { ...image.alt, [language]: event.target.value } })
+              }
+              className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm normal-case tracking-normal outline-none transition focus:border-foreground/40 focus:bg-background"
+            />
+          </label>
+        ))}
+        {(["es", "en"] as const).map((language) => (
+          <label
+            key={`${image.id}-footnote-${language}`}
+            className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60"
+          >
+            <span>Nota al pie ({language.toUpperCase()})</span>
+            <input
+              value={image.footnote[language]}
+              onChange={(event) =>
+                update({
+                  footnote: { ...image.footnote, [language]: event.target.value },
+                })
+              }
+              className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm normal-case tracking-normal outline-none transition focus:border-foreground/40 focus:bg-background"
+            />
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const ProjectManager = ({
   projects,
   clients,
@@ -2676,6 +2829,7 @@ const ProjectManager = ({
       year: "",
       startYear: "",
       endYear: "",
+      isOngoing: false,
       client: createLocaleField(),
       location: createLocaleField(),
       cover: createImageField(randomId()),
@@ -2766,7 +2920,8 @@ const ProjectManager = ({
         categories: [...project.categories],
         year: project.year,
         startYear: project.startYear ? String(project.startYear) : "",
-        endYear: project.endYear ? String(project.endYear) : "",
+        endYear: project.isOngoing ? "" : project.endYear ? String(project.endYear) : "",
+        isOngoing: Boolean(project.isOngoing),
         client: createLocaleField(project.client),
         location: createLocaleField(project.location),
         cover: createImageField(randomId(), project.cover),
@@ -2834,7 +2989,7 @@ const ProjectManager = ({
       ),
     );
 
-    if (!form.year.trim() && !startYearValue && !endYearValue) {
+    if (!form.year.trim() && !startYearValue && !endYearValue && !form.isOngoing) {
       throw new Error("Agrega al menos un año de inicio o fin");
     }
 
@@ -2843,8 +2998,36 @@ const ProjectManager = ({
     }
 
     const description = form.description
-      .map((paragraph) => trimLocaleField(paragraph.text))
-      .filter(hasLocaleContent);
+      .filter((paragraph) => hasLocaleContent(paragraph.text))
+      .map((paragraph, paragraphIndex) => {
+        const images = paragraph.images
+          .filter(imageHasData)
+          .map((image, imageIndex) => ({
+            src: image.src.trim() || undefined,
+            publicId: image.publicId.trim() || undefined,
+            alt: requireLocaleField(
+              image.alt,
+              `el texto alternativo de la imagen ${imageIndex + 1} del párrafo ${paragraphIndex + 1}`,
+            ),
+            footnote: normalizeOptionalLocaleField(image.footnote),
+          }));
+
+        return {
+          text: requireLocaleField(
+            paragraph.text,
+            `el texto del párrafo ${paragraphIndex + 1}`,
+          ),
+          ...(paragraph.mediaLayout && images.length > 0
+            ? {
+                media: {
+                  layout: paragraph.mediaLayout,
+                  images:
+                    paragraph.mediaLayout === "gallery" ? images : images.slice(0, 1),
+                },
+              }
+            : {}),
+        };
+      });
 
     if (description.length === 0) {
       throw new Error("Agrega al menos un párrafo de descripción");
@@ -2887,11 +3070,19 @@ const ProjectManager = ({
       showOnHome: form.showOnHome,
       subtitle: requireLocaleField(form.subtitle, "el subtítulo del proyecto"),
       categories,
-      year: form.year.trim() || `${startYearValue}${endYearValue ? `–${endYearValue}` : ""}`,
+      year:
+        form.year.trim() ||
+        (form.isOngoing
+          ? `${startYearValue || new Date().getFullYear()}–${new Date().getFullYear()}`
+          : `${startYearValue}${endYearValue ? `–${endYearValue}` : ""}`),
       startYear: startYearValue ? Number.parseInt(startYearValue, 10) : undefined,
-      endYear: endYearValue ? Number.parseInt(endYearValue, 10) : undefined,
+      endYear:
+        !form.isOngoing && endYearValue
+          ? Number.parseInt(endYearValue, 10)
+          : undefined,
+      isOngoing: form.isOngoing,
       client: normalizeOptionalLocaleField(form.client) ?? "",
-      location: requireLocaleField(form.location, "la ubicación del proyecto"),
+      location: normalizeOptionalLocaleField(form.location) ?? "",
       cover: {
         src: form.cover.src.trim() || undefined,
         publicId: form.cover.publicId.trim() || undefined,
@@ -3108,9 +3299,28 @@ const ProjectManager = ({
               <input
                 value={form.endYear}
                 onChange={(event) => setForm((previous) => ({ ...previous, endYear: event.target.value }))}
-                className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
+                disabled={form.isOngoing}
+                className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background disabled:cursor-not-allowed disabled:opacity-45"
                 placeholder="2023"
                 inputMode="numeric"
+              />
+            </label>
+
+            <label className="flex items-center gap-3 rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60 md:col-span-2">
+              <span className="flex-1 text-foreground/70">
+                En curso — el cierre será siempre el año actual
+              </span>
+              <input
+                type="checkbox"
+                checked={form.isOngoing}
+                onChange={(event) =>
+                  setForm((previous) => ({
+                    ...previous,
+                    isOngoing: event.target.checked,
+                    endYear: event.target.checked ? "" : previous.endYear,
+                  }))
+                }
+                className="size-4 rounded border-foreground/30 text-foreground focus:ring-foreground"
               />
             </label>
 
@@ -3491,7 +3701,7 @@ const ProjectManager = ({
             </label>
 
             <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
-              <span>Ubicación (ES)</span>
+              <span>Ubicación (ES, opcional)</span>
               <input
                 value={form.location.es}
                 onChange={(event) =>
@@ -3505,7 +3715,7 @@ const ProjectManager = ({
             </label>
 
             <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
-              <span>Ubicación (EN)</span>
+              <span>Ubicación (EN, opcional)</span>
               <input
                 value={form.location.en}
                 onChange={(event) =>
@@ -3921,59 +4131,176 @@ const ProjectManager = ({
               </button>
             </div>
 
-            <div className="space-y-4">
-              {form.description.map((paragraph) => (
-                <div key={paragraph.id} className="grid gap-3 md:grid-cols-2">
-                  <label className="space-y-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
-                    <span>Texto (ES)</span>
-                    <textarea
-                      value={paragraph.text.es}
-                      onChange={(event) =>
-                        setForm((previous) => ({
-                          ...previous,
-                          description: previous.description.map((item) =>
-                            item.id === paragraph.id
-                              ? { ...item, text: { ...item.text, es: event.target.value } }
-                              : item,
-                          ),
-                        }))
-                      }
-                      className="min-h-[96px] w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
-                    />
-                  </label>
+            <p className="text-xs leading-5 text-foreground/55">
+              Cada párrafo puede llevar una imagen con tamaño propio o una galería. Es completamente opcional.
+            </p>
 
-                  <label className="space-y-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
-                    <span>Texto (EN)</span>
-                    <textarea
-                      value={paragraph.text.en}
-                      onChange={(event) =>
-                        setForm((previous) => ({
-                          ...previous,
-                          description: previous.description.map((item) =>
-                            item.id === paragraph.id
-                              ? { ...item, text: { ...item.text, en: event.target.value } }
-                              : item,
-                          ),
-                        }))
-                      }
-                      className="min-h-[96px] w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm outline-none transition focus:border-foreground/40 focus:bg-background"
-                    />
-                  </label>
-
-                  <div className="md:col-span-2">
+            <div className="space-y-5">
+              {form.description.map((paragraph, paragraphIndex) => (
+                <div
+                  key={paragraph.id}
+                  className="space-y-4 rounded-2xl border border-foreground/10 bg-foreground/[0.025] p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                      Párrafo {paragraphIndex + 1}
+                    </span>
                     <button
                       type="button"
                       onClick={() =>
                         setForm((previous) => ({
                           ...previous,
-                          description: previous.description.filter((item) => item.id !== paragraph.id),
+                          description: previous.description.filter(
+                            (item) => item.id !== paragraph.id,
+                          ),
                         }))
                       }
-                      className="rounded-full border border-foreground/15 px-3 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+                      className="rounded-full border border-foreground/15 px-3 py-1 text-xs font-semibold text-foreground/70 transition hover:border-red-300 hover:text-red-600"
                     >
                       Quitar párrafo
                     </button>
                   </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {(["es", "en"] as const).map((language) => (
+                      <label
+                        key={`${paragraph.id}-text-${language}`}
+                        className="space-y-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60"
+                      >
+                        <span>Texto ({language.toUpperCase()})</span>
+                        <textarea
+                          value={paragraph.text[language]}
+                          onChange={(event) =>
+                            setForm((previous) => ({
+                              ...previous,
+                              description: previous.description.map((item) =>
+                                item.id === paragraph.id
+                                  ? {
+                                      ...item,
+                                      text: {
+                                        ...item.text,
+                                        [language]: event.target.value,
+                                      },
+                                    }
+                                  : item,
+                              ),
+                            }))
+                          }
+                          className="min-h-[120px] w-full rounded-xl border border-foreground/15 bg-background px-3 py-2 text-sm normal-case tracking-normal outline-none transition focus:border-foreground/40"
+                        />
+                      </label>
+                    ))}
+                  </div>
+
+                  <label className="block max-w-md space-y-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                    <span>Medios después del párrafo (opcional)</span>
+                    <select
+                      value={paragraph.mediaLayout}
+                      onChange={(event) => {
+                        const mediaLayout = event.target.value as
+                          | ProjectDescriptionMediaLayout
+                          | "";
+                        setForm((previous) => ({
+                          ...previous,
+                          description: previous.description.map((item) =>
+                            item.id === paragraph.id
+                              ? {
+                                  ...item,
+                                  mediaLayout,
+                                  images:
+                                    mediaLayout && item.images.length === 0
+                                      ? [createImageField(randomId())]
+                                      : item.images,
+                                }
+                              : item,
+                          ),
+                        }));
+                      }}
+                      className="w-full rounded-xl border border-foreground/15 bg-background px-3 py-2 text-sm normal-case tracking-normal outline-none transition focus:border-foreground/40"
+                    >
+                      <option value="">Sin imagen</option>
+                      <option value="small">Imagen pequeña</option>
+                      <option value="medium">Imagen mediana</option>
+                      <option value="large">Imagen grande</option>
+                      <option value="gallery">Galería</option>
+                    </select>
+                  </label>
+
+                  {paragraph.mediaLayout ? (
+                    <div className="space-y-3 border-t border-foreground/10 pt-4">
+                      {(paragraph.mediaLayout === "gallery" || paragraph.images.length === 0) ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setForm((previous) => ({
+                              ...previous,
+                              description: previous.description.map((item) =>
+                                item.id === paragraph.id
+                                  ? {
+                                      ...item,
+                                      images: [...item.images, createImageField(randomId())],
+                                    }
+                                  : item,
+                              ),
+                            }))
+                          }
+                          className="rounded-full border border-foreground/15 px-3 py-1 text-xs font-semibold text-foreground/70 transition hover:border-foreground/40 hover:text-foreground"
+                        >
+                          {paragraph.mediaLayout === "gallery"
+                            ? "Añadir imagen a la galería"
+                            : "Añadir imagen"}
+                        </button>
+                      ) : null}
+
+                      <div className="grid gap-4 xl:grid-cols-2">
+                        {(paragraph.mediaLayout === "gallery"
+                          ? paragraph.images
+                          : paragraph.images.slice(0, 1)
+                        ).map((image) => (
+                          <DescriptionImageEditor
+                            key={image.id}
+                            image={image}
+                            folder={`projects/${form.slug.trim() || "nuevo"}/description`}
+                            cloudinaryReady={cloudinaryReady}
+                            openCloudinaryPicker={openCloudinaryPicker}
+                            onMessage={setMessage}
+                            onChange={(updatedImage) =>
+                              setForm((previous) => ({
+                                ...previous,
+                                description: previous.description.map((item) =>
+                                  item.id === paragraph.id
+                                    ? {
+                                        ...item,
+                                        images: item.images.map((currentImage) =>
+                                          currentImage.id === image.id
+                                            ? updatedImage
+                                            : currentImage,
+                                        ),
+                                      }
+                                    : item,
+                                ),
+                              }))
+                            }
+                            onRemove={() =>
+                              setForm((previous) => ({
+                                ...previous,
+                                description: previous.description.map((item) =>
+                                  item.id === paragraph.id
+                                    ? {
+                                        ...item,
+                                        images: item.images.filter(
+                                          (currentImage) => currentImage.id !== image.id,
+                                        ),
+                                      }
+                                    : item,
+                                ),
+                              }))
+                            }
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ))}
             </div>

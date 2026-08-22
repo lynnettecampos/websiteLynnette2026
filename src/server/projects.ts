@@ -2,6 +2,8 @@ import type {
   LocalizedValue,
   Project,
   ProjectCategory,
+  ProjectDescriptionBlock,
+  ProjectDescriptionMediaLayout,
   ProjectEntity,
   ProjectGalleryImage,
   ProjectVideo,
@@ -28,6 +30,14 @@ type ProjectImagePayload = {
   footnote?: LocaleText | null;
 };
 
+type ProjectDescriptionPayloadBlock = {
+  text: LocaleText;
+  media?: {
+    layout: ProjectDescriptionMediaLayout;
+    images: ProjectImagePayload[];
+  };
+};
+
 export type ProjectPayload = {
   slug: string;
   name: LocaleText;
@@ -43,12 +53,13 @@ export type ProjectPayload = {
   year: string;
   startYear?: number | null;
   endYear?: number | null;
+  isOngoing?: boolean;
   client: LocalizedValue;
-  location: LocalizedValue;
+  location?: LocalizedValue;
   cover: ProjectImagePayload;
   gallery?: ProjectImagePayload[];
   video?: { url: string; title: LocaleText } | null;
-  description: LocaleText[];
+  description: ProjectDescriptionPayloadBlock[];
   meta?: { label: LocaleText; value: LocalizedValue }[];
   entities?: string[];
   order?: number | null;
@@ -70,12 +81,13 @@ type ProjectDocument = {
   year: string;
   startYear?: number | null;
   endYear?: number | null;
+  isOngoing?: boolean;
   client?: LocalizedValue | null;
-  location: LocalizedValue;
+  location?: LocalizedValue | null;
   cover: ProjectImagePayload | null;
   gallery?: ProjectImagePayload[];
   video?: { url: string; title: LocaleText } | null;
-  description: LocaleText[];
+  description: Array<ProjectDescriptionPayloadBlock | LocaleText>;
   meta?: { label: LocaleText; value: LocalizedValue }[];
   entities?: string[];
   order?: number | null;
@@ -112,6 +124,36 @@ const normalizeImage = (
     footnote: image.footnote ? normalizeLocaleText(image.footnote) : undefined,
     src,
   };
+};
+
+const normalizeDescription = (
+  description: Array<ProjectDescriptionPayloadBlock | LocaleText> | undefined,
+): ProjectDescriptionBlock[] => {
+  if (!Array.isArray(description)) {
+    return [];
+  }
+
+  return description.map((block) => {
+    if ("text" in block) {
+      const mediaImages = block.media?.images
+        .map((image) => normalizeImage(image))
+        .filter(Boolean) as ProjectGalleryImage[] | undefined;
+
+      return {
+        text: normalizeLocaleText(block.text),
+        ...(block.media && mediaImages && mediaImages.length > 0
+          ? {
+              media: {
+                layout: block.media.layout,
+                images: mediaImages,
+              },
+            }
+          : {}),
+      };
+    }
+
+    return { text: normalizeLocaleText(block) };
+  });
 };
 
 const parseYouTubeStart = (value: string | null): number | undefined => {
@@ -279,15 +321,14 @@ const normalizeProjectDocument = async (document: ProjectDocument): Promise<Proj
     categories: document.categories ?? [],
     year: document.year,
     startYear: document.startYear ?? undefined,
-    endYear: document.endYear ?? undefined,
+    endYear: document.isOngoing ? undefined : document.endYear ?? undefined,
+    isOngoing: Boolean(document.isOngoing),
     client: normalizeLocalizedValue(document.client ?? ""),
-    location: normalizeLocalizedValue(document.location),
+    location: normalizeLocalizedValue(document.location ?? ""),
     cover,
     gallery: gallery as ProjectGalleryImage[],
     video,
-    description: Array.isArray(document.description)
-      ? (document.description as LocaleText[]).map(normalizeLocaleText)
-      : [],
+    description: normalizeDescription(document.description),
     meta: Array.isArray(document.meta)
       ? (document.meta as { label: LocaleText; value: LocalizedValue }[]).map((item) => ({
           label: normalizeLocaleText(item.label),
@@ -357,9 +398,10 @@ const prepareProjectDocument = (payload: ProjectPayload) => {
     categories: payload.categories ?? [],
     year: payload.year,
     startYear: payload.startYear ?? null,
-    endYear: payload.endYear ?? null,
+    endYear: payload.isOngoing ? null : payload.endYear ?? null,
+    isOngoing: Boolean(payload.isOngoing),
     client: normalizeLocalizedValue(payload.client),
-    location: normalizeLocalizedValue(payload.location),
+    location: normalizeLocalizedValue(payload.location ?? ""),
     cover: normalizeImage(payload.cover) ?? null,
     gallery: Array.isArray(payload.gallery)
       ? payload.gallery.map((image) => normalizeImage(image)).filter(Boolean)
@@ -370,7 +412,7 @@ const prepareProjectDocument = (payload: ProjectPayload) => {
           title: normalizeLocaleText(payload.video.title),
         }
       : null,
-    description: payload.description.map(normalizeLocaleText),
+    description: normalizeDescription(payload.description),
     meta: Array.isArray(payload.meta)
       ? payload.meta.map((item) => ({
           label: normalizeLocaleText(item.label),
@@ -399,6 +441,7 @@ const projectToPayload = (project: Project): ProjectPayload => ({
   year: project.year,
   startYear: project.startYear,
   endYear: project.endYear,
+  isOngoing: project.isOngoing,
   client: project.client,
   location: project.location,
   cover: project.cover,

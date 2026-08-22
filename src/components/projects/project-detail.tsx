@@ -10,6 +10,8 @@ import type {
   LocalizedValue,
   Project,
   ProjectCategory,
+  ProjectDescriptionBlock,
+  ProjectDescriptionMediaLayout,
   ProjectGalleryImage,
 } from "@/domain/projects";
 import { formatProjectTimeline, translateCategoryLabel } from "@/domain/projects";
@@ -48,6 +50,43 @@ const galleryWidth = (index: number): string => {
   ];
 
   return positions[index % positions.length];
+};
+
+const DESCRIPTION_MEDIA_WIDTH: Record<
+  Exclude<ProjectDescriptionMediaLayout, "gallery">,
+  string
+> = {
+  small: "w-full sm:w-1/2 lg:max-w-sm",
+  medium: "w-full sm:w-3/4 lg:max-w-xl",
+  large: "w-full",
+};
+
+const renderTextWithLinks = (value: string) => {
+  const parts = value.split(/(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi);
+
+  return parts.map((part, index) => {
+    if (!/^(?:https?:\/\/|www\.)/i.test(part)) {
+      return part;
+    }
+
+    const linkText = part.replace(/[.,;:!?\])}]+$/, "");
+    const trailingPunctuation = part.slice(linkText.length);
+    const href = /^www\./i.test(linkText) ? `https://${linkText}` : linkText;
+
+    return (
+      <span key={`${linkText}-${index}`}>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="border-b border-current/40 outline-none transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:border-[var(--accent)] focus-visible:text-[var(--accent)]"
+        >
+          {linkText} ↗
+        </a>
+        {trailingPunctuation}
+      </span>
+    );
+  });
 };
 
 type ProjectNavigation = {
@@ -89,6 +128,51 @@ function ArtworkImage({
         </figcaption>
       ) : null}
     </figure>
+  );
+}
+
+function DescriptionMedia({ block }: { block: ProjectDescriptionBlock }) {
+  const media = block.media;
+
+  if (!media || media.images.length === 0) {
+    return null;
+  }
+
+  if (media.layout === "gallery") {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2">
+        {media.images.map((image, index) => (
+          <div
+            key={`${image.src}-${index}`}
+            className={media.images.length % 2 === 1 && index === 0 ? "sm:col-span-2" : ""}
+          >
+            <ArtworkImage
+              image={image}
+              sizes={
+                media.images.length % 2 === 1 && index === 0
+                  ? "(min-width: 1024px) 55vw, calc(100vw - 3rem)"
+                  : "(min-width: 1024px) 28vw, calc(100vw - 3rem)"
+              }
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className={DESCRIPTION_MEDIA_WIDTH[media.layout]}>
+      <ArtworkImage
+        image={media.images[0]}
+        sizes={
+          media.layout === "small"
+            ? "(min-width: 1024px) 22vw, calc(100vw - 3rem)"
+            : media.layout === "medium"
+              ? "(min-width: 1024px) 38vw, calc(100vw - 3rem)"
+              : "(min-width: 1024px) 55vw, calc(100vw - 3rem)"
+        }
+      />
+    </div>
   );
 }
 
@@ -162,11 +246,12 @@ export function ProjectDetail({ project, categoryLabels, navigation }: ProjectDe
           >
             {translate(locale, LABELS.statement)}
           </h2>
-          <div className="max-w-3xl space-y-6 text-lg leading-[1.55] tracking-[-0.015em] sm:text-xl sm:leading-[1.55]">
-            {project.description.map((paragraph, index) => (
-              <p key={`${project.slug}-paragraph-${index}`}>
-                {translate(locale, paragraph)}
-              </p>
+          <div className="max-w-3xl space-y-10 text-lg leading-[1.55] tracking-[-0.015em] sm:text-xl sm:leading-[1.55]">
+            {project.description.map((block, index) => (
+              <div key={`${project.slug}-paragraph-${index}`} className="space-y-5">
+                <p>{renderTextWithLinks(translate(locale, block.text))}</p>
+                <DescriptionMedia block={block} />
+              </div>
             ))}
           </div>
         </div>

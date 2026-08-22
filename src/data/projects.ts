@@ -25,6 +25,10 @@ const logProjectFallback = (reason: string) => {
 
 const sortProjectsByTimeline = (projects: Project[]): Project[] => {
   const score = (project: Project) => {
+    if (project.isOngoing) {
+      return new Date().getFullYear();
+    }
+
     if (project.endYear) {
       return project.endYear;
     }
@@ -75,7 +79,7 @@ const getProjectsUncached = async (includePrivate = false): Promise<Project[]> =
 
 const getPublicProjectsCached = unstable_cache(
   () => getProjectsUncached(false),
-  ["public-projects-v1"],
+  ["public-projects-v2"],
   {
     revalidate: PUBLIC_CONTENT_REVALIDATE_SECONDS,
     tags: [CONTENT_CACHE_TAGS.projects],
