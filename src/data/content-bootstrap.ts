@@ -15,4 +15,3 @@ export const mergeFallbackRecordsUntilInitialized = <T extends { slug: string }>
 
   return Array.from(recordsBySlug.values());
 };
-
