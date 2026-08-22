@@ -11,6 +11,7 @@ import type {
   Project,
   ProjectCategory,
   ProjectDescriptionBlock,
+  ProjectDescriptionImageSize,
   ProjectDescriptionMediaLayout,
 } from "@/domain/projects";
 import {
@@ -59,6 +60,7 @@ type ImageField = {
   publicId: string;
   alt: LocaleField;
   footnote: LocaleField;
+  descriptionSize: ProjectDescriptionImageSize | "";
 };
 
 type ProjectMetaField = {
@@ -263,13 +265,20 @@ const createLocaleField = (value?: LocaleText | LocalizedValue): LocaleField => 
 
 const createImageField = (
   id: string,
-  image?: { src?: string; publicId?: string; alt: LocaleText; footnote?: LocaleText },
+  image?: {
+    src?: string;
+    publicId?: string;
+    alt: LocaleText;
+    footnote?: LocaleText;
+    size?: ProjectDescriptionImageSize;
+  },
 ): ImageField => ({
   id,
   src: image?.src ?? "",
   publicId: image?.publicId ?? "",
   alt: createLocaleField(image?.alt),
   footnote: createLocaleField(image?.footnote),
+  descriptionSize: image?.size ?? "",
 });
 
 const createMetaField = (id: string, meta?: { label: LocaleText; value: LocalizedValue }): ProjectMetaField => ({
@@ -2665,6 +2674,7 @@ const ClientManager = ({
 
 const DescriptionImageEditor = ({
   image,
+  showSizeControl,
   folder,
   cloudinaryReady,
   openCloudinaryPicker,
@@ -2673,6 +2683,7 @@ const DescriptionImageEditor = ({
   onMessage,
 }: {
   image: ImageField;
+  showSizeControl: boolean;
   folder: string;
   cloudinaryReady: boolean;
   openCloudinaryPicker?: (options: CloudinaryPickerOptions) => void;
@@ -2742,6 +2753,25 @@ const DescriptionImageEditor = ({
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
+        {showSizeControl ? (
+          <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60 md:col-span-2">
+            <span>Tamaño de esta imagen</span>
+            <select
+              value={image.descriptionSize}
+              onChange={(event) =>
+                update({
+                  descriptionSize: event.target.value as ProjectDescriptionImageSize | "",
+                })
+              }
+              className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm normal-case tracking-normal outline-none transition focus:border-foreground/40 focus:bg-background"
+            >
+              <option value="">Automático (composición actual)</option>
+              <option value="small">Pequeña</option>
+              <option value="medium">Mediana</option>
+              <option value="large">Grande</option>
+            </select>
+          </label>
+        ) : null}
         <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
           <span>URL</span>
           <input
@@ -3010,6 +3040,9 @@ const ProjectManager = ({
               `el texto alternativo de la imagen ${imageIndex + 1} del párrafo ${paragraphIndex + 1}`,
             ),
             footnote: normalizeOptionalLocaleField(image.footnote),
+            ...(paragraph.mediaLayout === "gallery" && image.descriptionSize
+              ? { size: image.descriptionSize }
+              : {}),
           }));
 
         return {
@@ -4260,6 +4293,7 @@ const ProjectManager = ({
                           <DescriptionImageEditor
                             key={image.id}
                             image={image}
+                            showSizeControl={paragraph.mediaLayout === "gallery"}
                             folder={`projects/${form.slug.trim() || "nuevo"}/description`}
                             cloudinaryReady={cloudinaryReady}
                             openCloudinaryPicker={openCloudinaryPicker}

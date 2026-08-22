@@ -11,6 +11,7 @@ import type {
   Project,
   ProjectCategory,
   ProjectDescriptionBlock,
+  ProjectDescriptionImageSize,
   ProjectDescriptionMediaLayout,
   ProjectGalleryImage,
 } from "@/domain/projects";
@@ -59,6 +60,18 @@ const DESCRIPTION_MEDIA_WIDTH: Record<
   small: "w-full sm:w-1/2 lg:max-w-sm",
   medium: "w-full sm:w-3/4 lg:max-w-xl",
   large: "w-full",
+};
+
+const DESCRIPTION_GALLERY_WIDTH: Record<ProjectDescriptionImageSize, string> = {
+  small: "col-span-12 sm:col-span-4",
+  medium: "col-span-12 sm:col-span-6",
+  large: "col-span-12",
+};
+
+const DESCRIPTION_GALLERY_SIZES: Record<ProjectDescriptionImageSize, string> = {
+  small: "(min-width: 1024px) 18vw, (min-width: 640px) 33vw, calc(100vw - 3rem)",
+  medium: "(min-width: 1024px) 28vw, (min-width: 640px) 50vw, calc(100vw - 3rem)",
+  large: "(min-width: 1024px) 55vw, calc(100vw - 3rem)",
 };
 
 const renderTextWithLinks = (value: string) => {
@@ -140,22 +153,18 @@ function DescriptionMedia({ block }: { block: ProjectDescriptionBlock }) {
 
   if (media.layout === "gallery") {
     return (
-      <div className="grid gap-4 sm:grid-cols-2">
-        {media.images.map((image, index) => (
-          <div
-            key={`${image.src}-${index}`}
-            className={media.images.length % 2 === 1 && index === 0 ? "sm:col-span-2" : ""}
-          >
-            <ArtworkImage
-              image={image}
-              sizes={
-                media.images.length % 2 === 1 && index === 0
-                  ? "(min-width: 1024px) 55vw, calc(100vw - 3rem)"
-                  : "(min-width: 1024px) 28vw, calc(100vw - 3rem)"
-              }
-            />
-          </div>
-        ))}
+      <div className="grid grid-cols-12 gap-4">
+        {media.images.map((image, index) => {
+          const legacySize: ProjectDescriptionImageSize =
+            media.images.length % 2 === 1 && index === 0 ? "large" : "medium";
+          const size = image.size ?? legacySize;
+
+          return (
+            <div key={`${image.src}-${index}`} className={DESCRIPTION_GALLERY_WIDTH[size]}>
+              <ArtworkImage image={image} sizes={DESCRIPTION_GALLERY_SIZES[size]} />
+            </div>
+          );
+        })}
       </div>
     );
   }

@@ -9,6 +9,12 @@ export type ProjectGalleryImage = {
   footnote?: LocaleText;
 };
 
+export type ProjectDescriptionImageSize = "small" | "medium" | "large";
+
+export type ProjectDescriptionImage = ProjectGalleryImage & {
+  size?: ProjectDescriptionImageSize;
+};
+
 export type ProjectDescriptionMediaLayout =
   | "small"
   | "medium"
@@ -19,7 +25,7 @@ export type ProjectDescriptionBlock = {
   text: LocaleText;
   media?: {
     layout: ProjectDescriptionMediaLayout;
-    images: ProjectGalleryImage[];
+    images: ProjectDescriptionImage[];
   };
 };
 

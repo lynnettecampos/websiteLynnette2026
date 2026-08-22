@@ -3,6 +3,8 @@ import type {
   Project,
   ProjectCategory,
   ProjectDescriptionBlock,
+  ProjectDescriptionImage,
+  ProjectDescriptionImageSize,
   ProjectDescriptionMediaLayout,
   ProjectEntity,
   ProjectGalleryImage,
@@ -28,6 +30,7 @@ type ProjectImagePayload = {
   alt: LocaleText;
   publicId?: string | null;
   footnote?: LocaleText | null;
+  size?: ProjectDescriptionImageSize | null;
 };
 
 type ProjectDescriptionPayloadBlock = {
@@ -136,8 +139,19 @@ const normalizeDescription = (
   return description.map((block) => {
     if ("text" in block) {
       const mediaImages = block.media?.images
-        .map((image) => normalizeImage(image))
-        .filter(Boolean) as ProjectGalleryImage[] | undefined;
+        .map((image) => {
+          const normalizedImage = normalizeImage(image);
+
+          if (!normalizedImage) {
+            return undefined;
+          }
+
+          return {
+            ...normalizedImage,
+            ...(image.size ? { size: image.size } : {}),
+          } satisfies ProjectDescriptionImage;
+        })
+        .filter(Boolean) as ProjectDescriptionImage[] | undefined;
 
       return {
         text: normalizeLocaleText(block.text),

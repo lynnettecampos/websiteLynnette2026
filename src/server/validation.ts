@@ -66,9 +66,15 @@ export const projectCategorySchema = z.string().trim().min(1);
 
 export const projectImageSchema = clientImageSchema;
 
+const projectDescriptionImageSchema = projectImageSchema.and(
+  z.object({
+    size: z.enum(["small", "medium", "large"]).optional(),
+  }),
+);
+
 const projectDescriptionMediaSchema = z.object({
   layout: z.enum(["small", "medium", "large", "gallery"]),
-  images: z.array(projectImageSchema).min(1),
+  images: z.array(projectDescriptionImageSchema).min(1),
 });
 
 const projectDescriptionBlockSchema = z.object({

@@ -8,6 +8,7 @@ import type {
   Project,
   ProjectCategory,
   ProjectDescriptionBlock,
+  ProjectDescriptionImage,
   ProjectDescriptionMediaLayout,
   ProjectEntity,
   ProjectGalleryImage,
@@ -222,6 +223,31 @@ const parseGallery = (value: unknown, projectName: string): ProjectGalleryImage[
   });
 };
 
+const parseDescriptionGallery = (
+  value: unknown,
+  projectName: string,
+): ProjectDescriptionImage[] => {
+  const images = parseGallery(value, projectName);
+  const rawImages = value as Record<string, unknown>[];
+
+  return images.map((image, index) => {
+    const rawSize = rawImages[index]?.size;
+
+    if (rawSize === undefined) {
+      return image;
+    }
+
+    if (rawSize !== "small" && rawSize !== "medium" && rawSize !== "large") {
+      throw new Error(`Gallery item ${index + 1} for ${projectName} has an invalid size`);
+    }
+
+    return {
+      ...image,
+      size: rawSize,
+    } satisfies ProjectDescriptionImage;
+  });
+};
+
 const parseYearNumber = (value: unknown, field: string): number | undefined => {
   if (value === undefined || value === null) {
     return undefined;
@@ -252,7 +278,7 @@ const parseDescription = (
           ? {
               media: {
                 layout: media.layout as ProjectDescriptionMediaLayout,
-                images: parseGallery(
+                images: parseDescriptionGallery(
                   media.images,
                   `${projectName} description ${index + 1}`,
                 ),
