@@ -16,7 +16,7 @@ const PUBLICATION_LABELS: Record<PublicationType, { es: string; en: string }> = 
   interview: { es: "Entrevista", en: "Interview" },
   press: { es: "Prensa", en: "Press" },
   academic: { es: "Publicación académica", en: "Academic publication" },
-  other: { es: "Publicación", en: "Publication" },
+  other: { es: "Textos sobre mi obra", en: "Texts on My Work" },
 };
 
 const publicationYear = (publication: Publication) => publication.publishedAt.slice(0, 4);
