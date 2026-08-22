@@ -64,13 +64,13 @@ export const clientPayloadSchema = z.object({
 
 export const projectCategorySchema = z.string().trim().min(1);
 
-export const projectImageSchema = clientImageSchema;
-
-const projectDescriptionImageSchema = projectImageSchema.and(
+export const projectImageSchema = clientImageSchema.and(
   z.object({
     size: z.enum(["small", "medium", "large"]).optional(),
   }),
 );
+
+const projectDescriptionImageSchema = projectImageSchema;
 
 const projectDescriptionMediaSchema = z.object({
   layout: z.enum(["small", "medium", "large", "gallery"]),

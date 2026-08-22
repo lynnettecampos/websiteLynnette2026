@@ -14,6 +14,7 @@ import type {
   ProjectDescriptionImageSize,
   ProjectDescriptionMediaLayout,
   ProjectGalleryImage,
+  ProjectImageSize,
 } from "@/domain/projects";
 import { formatProjectTimeline, translateCategoryLabel } from "@/domain/projects";
 import { translate, type Locale, type LocaleText } from "@/lib/i18n";
@@ -51,6 +52,18 @@ const galleryWidth = (index: number): string => {
   ];
 
   return positions[index % positions.length];
+};
+
+const PROJECT_IMAGE_WIDTH: Record<ProjectImageSize, string> = {
+  small: "w-full lg:w-1/2",
+  medium: "w-full lg:w-4/5",
+  large: "w-full",
+};
+
+const PROJECT_IMAGE_SIZES: Record<ProjectImageSize, string> = {
+  small: "(min-width: 1280px) 576px, (min-width: 1024px) 50vw, calc(100vw - 3rem)",
+  medium: "(min-width: 1280px) 922px, (min-width: 1024px) 80vw, calc(100vw - 3rem)",
+  large: "(min-width: 1280px) 1152px, calc(100vw - 3rem)",
 };
 
 const DESCRIPTION_MEDIA_WIDTH: Record<
@@ -237,11 +250,17 @@ export function ProjectDetail({ project, categoryLabels, navigation }: ProjectDe
           ) : null}
         </header>
 
-        <ArtworkImage
-          image={project.cover}
-          priority
-          sizes="(min-width: 1280px) 1152px, calc(100vw - 3rem)"
-        />
+        <div className={project.cover.size ? PROJECT_IMAGE_WIDTH[project.cover.size] : "w-full"}>
+          <ArtworkImage
+            image={project.cover}
+            priority
+            sizes={
+              project.cover.size
+                ? PROJECT_IMAGE_SIZES[project.cover.size]
+                : "(min-width: 1280px) 1152px, calc(100vw - 3rem)"
+            }
+          />
+        </div>
       </div>
 
       <section
@@ -303,13 +322,18 @@ export function ProjectDetail({ project, categoryLabels, navigation }: ProjectDe
           </div>
           <ol className="space-y-14 sm:space-y-24 lg:space-y-36">
             {project.gallery.map((image, index) => (
-              <li key={`${project.slug}-gallery-${index}`} className={galleryWidth(index)}>
+              <li
+                key={`${project.slug}-gallery-${index}`}
+                className={image.size ? PROJECT_IMAGE_WIDTH[image.size] : galleryWidth(index)}
+              >
                 <ArtworkImage
                   image={image}
                   sizes={
-                    index % 4 === 2
-                      ? "(min-width: 1024px) 45vw, calc(100vw - 3rem)"
-                      : "(min-width: 1280px) 1000px, calc(100vw - 3rem)"
+                    image.size
+                      ? PROJECT_IMAGE_SIZES[image.size]
+                      : index % 4 === 2
+                        ? "(min-width: 1024px) 45vw, calc(100vw - 3rem)"
+                        : "(min-width: 1280px) 1000px, calc(100vw - 3rem)"
                   }
                 />
               </li>

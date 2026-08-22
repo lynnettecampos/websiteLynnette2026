@@ -126,6 +126,7 @@ const normalizeImage = (
     publicId: image.publicId ?? undefined,
     footnote: image.footnote ? normalizeLocaleText(image.footnote) : undefined,
     src,
+    ...(image.size ? { size: image.size } : {}),
   };
 };
 

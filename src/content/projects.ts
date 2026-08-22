@@ -208,9 +208,14 @@ const parseGallery = (value: unknown, projectName: string): ProjectGalleryImage[
     const src = (item as Record<string, unknown>).src;
     const alt = (item as Record<string, unknown>).alt;
     const footnote = (item as Record<string, unknown>).footnote;
+    const size = (item as Record<string, unknown>).size;
 
     if (typeof src !== "string") {
       throw new Error(`Gallery item ${index + 1} for ${projectName} is missing a src`);
+    }
+
+    if (size !== undefined && size !== "small" && size !== "medium" && size !== "large") {
+      throw new Error(`Gallery item ${index + 1} for ${projectName} has an invalid size`);
     }
 
     return {
@@ -219,6 +224,7 @@ const parseGallery = (value: unknown, projectName: string): ProjectGalleryImage[
       footnote: footnote
         ? parseLocaleText(footnote, `${projectName} gallery footnote ${index + 1}`)
         : undefined,
+      ...(size ? { size } : {}),
     };
   });
 };
@@ -226,27 +232,7 @@ const parseGallery = (value: unknown, projectName: string): ProjectGalleryImage[
 const parseDescriptionGallery = (
   value: unknown,
   projectName: string,
-): ProjectDescriptionImage[] => {
-  const images = parseGallery(value, projectName);
-  const rawImages = value as Record<string, unknown>[];
-
-  return images.map((image, index) => {
-    const rawSize = rawImages[index]?.size;
-
-    if (rawSize === undefined) {
-      return image;
-    }
-
-    if (rawSize !== "small" && rawSize !== "medium" && rawSize !== "large") {
-      throw new Error(`Gallery item ${index + 1} for ${projectName} has an invalid size`);
-    }
-
-    return {
-      ...image,
-      size: rawSize,
-    } satisfies ProjectDescriptionImage;
-  });
-};
+): ProjectDescriptionImage[] => parseGallery(value, projectName);
 
 const parseYearNumber = (value: unknown, field: string): number | undefined => {
   if (value === undefined || value === null) {

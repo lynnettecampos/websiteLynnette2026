@@ -60,7 +60,7 @@ type ImageField = {
   publicId: string;
   alt: LocaleField;
   footnote: LocaleField;
-  descriptionSize: ProjectDescriptionImageSize | "";
+  displaySize: ProjectDescriptionImageSize | "";
 };
 
 type ProjectMetaField = {
@@ -278,7 +278,7 @@ const createImageField = (
   publicId: image?.publicId ?? "",
   alt: createLocaleField(image?.alt),
   footnote: createLocaleField(image?.footnote),
-  descriptionSize: image?.size ?? "",
+  displaySize: image?.size ?? "",
 });
 
 const createMetaField = (id: string, meta?: { label: LocaleText; value: LocalizedValue }): ProjectMetaField => ({
@@ -2757,10 +2757,10 @@ const DescriptionImageEditor = ({
           <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60 md:col-span-2">
             <span>Tamaño de esta imagen</span>
             <select
-              value={image.descriptionSize}
+              value={image.displaySize}
               onChange={(event) =>
                 update({
-                  descriptionSize: event.target.value as ProjectDescriptionImageSize | "",
+                  displaySize: event.target.value as ProjectDescriptionImageSize | "",
                 })
               }
               className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm normal-case tracking-normal outline-none transition focus:border-foreground/40 focus:bg-background"
@@ -3040,8 +3040,8 @@ const ProjectManager = ({
               `el texto alternativo de la imagen ${imageIndex + 1} del párrafo ${paragraphIndex + 1}`,
             ),
             footnote: normalizeOptionalLocaleField(image.footnote),
-            ...(paragraph.mediaLayout === "gallery" && image.descriptionSize
-              ? { size: image.descriptionSize }
+            ...(paragraph.mediaLayout === "gallery" && image.displaySize
+              ? { size: image.displaySize }
               : {}),
           }));
 
@@ -3121,6 +3121,7 @@ const ProjectManager = ({
         publicId: form.cover.publicId.trim() || undefined,
         alt: requireLocaleField(form.cover.alt, "el texto alternativo de la portada"),
         footnote: normalizeOptionalLocaleField(form.cover.footnote),
+        ...(form.cover.displaySize ? { size: form.cover.displaySize } : {}),
       },
       gallery: form.gallery
         .filter(imageHasData)
@@ -3129,6 +3130,7 @@ const ProjectManager = ({
           publicId: image.publicId.trim() || undefined,
           alt: requireLocaleField(image.alt, `el texto alternativo de la imagen ${index + 1}`),
           footnote: normalizeOptionalLocaleField(image.footnote),
+          ...(image.displaySize ? { size: image.displaySize } : {}),
         })),
       description,
       meta: form.meta
@@ -3828,6 +3830,28 @@ const ProjectManager = ({
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
+              <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60 md:col-span-2">
+                <span>Tamaño de la portada</span>
+                <select
+                  value={form.cover.displaySize}
+                  onChange={(event) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      cover: {
+                        ...previous.cover,
+                        displaySize: event.target.value as ProjectDescriptionImageSize | "",
+                      },
+                    }))
+                  }
+                  className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm normal-case tracking-normal outline-none transition focus:border-foreground/40 focus:bg-background"
+                >
+                  <option value="">Automático (ancho completo)</option>
+                  <option value="small">Pequeña</option>
+                  <option value="medium">Mediana</option>
+                  <option value="large">Grande</option>
+                </select>
+              </label>
+
               <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
                 <span>URL</span>
                 <input
@@ -4029,6 +4053,34 @@ const ProjectManager = ({
                   </div>
 
                   <div className="space-y-2">
+                    <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
+                      <span>Tamaño de esta imagen</span>
+                      <select
+                        value={image.displaySize}
+                        onChange={(event) =>
+                          setForm((previous) => ({
+                            ...previous,
+                            gallery: previous.gallery.map((item) =>
+                              item.id === image.id
+                                ? {
+                                    ...item,
+                                    displaySize: event.target.value as
+                                      | ProjectDescriptionImageSize
+                                      | "",
+                                  }
+                                : item,
+                            ),
+                          }))
+                        }
+                        className="w-full rounded-xl border border-foreground/15 bg-foreground/5 px-3 py-2 text-sm normal-case tracking-normal outline-none transition focus:border-foreground/40 focus:bg-background"
+                      >
+                        <option value="">Automático (composición actual)</option>
+                        <option value="small">Pequeña</option>
+                        <option value="medium">Mediana</option>
+                        <option value="large">Grande</option>
+                      </select>
+                    </label>
+
                     <label className="space-y-1 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/60">
                       <span>URL</span>
                       <input

@@ -3,17 +3,18 @@ import type { Locale, LocaleText } from "@/lib/i18n";
 
 export type LocalizedValue = string | LocaleText;
 
+export type ProjectImageSize = "small" | "medium" | "large";
+
 export type ProjectGalleryImage = {
   src: string;
   alt: LocaleText;
   footnote?: LocaleText;
+  size?: ProjectImageSize;
 };
 
-export type ProjectDescriptionImageSize = "small" | "medium" | "large";
+export type ProjectDescriptionImageSize = ProjectImageSize;
 
-export type ProjectDescriptionImage = ProjectGalleryImage & {
-  size?: ProjectDescriptionImageSize;
-};
+export type ProjectDescriptionImage = ProjectGalleryImage;
 
 export type ProjectDescriptionMediaLayout =
   | "small"
