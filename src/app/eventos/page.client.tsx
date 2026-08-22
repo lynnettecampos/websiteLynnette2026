@@ -313,9 +313,6 @@ export default function EventsPageClient({
           {translate(locale, copy.title)}
         </h1>
         <div className="space-y-3 lg:col-span-4 lg:pb-1">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/60">
-            {locale === "es" ? "Agenda pública" : "Public programme"} · {events.length}
-          </p>
           <p className="max-w-sm text-sm leading-6 text-foreground/60">
             {translate(locale, copy.introduction)}
           </p>
@@ -323,14 +320,12 @@ export default function EventsPageClient({
       </header>
 
       <section className="py-12 sm:py-16" aria-labelledby="upcoming-events">
-        <div className="mb-7 flex items-baseline justify-between gap-4">
-          <h2 id="upcoming-events" className="font-mono text-xs uppercase tracking-[0.2em]">
-            {translate(locale, copy.upcomingTitle)}
-          </h2>
-          <span className="font-mono text-[10px] text-foreground/60" aria-hidden="true">
-            {String(upcoming.length).padStart(2, "0")}
-          </span>
-        </div>
+        <h2
+          id="upcoming-events"
+          className="mb-7 font-mono text-xs uppercase tracking-[0.2em]"
+        >
+          {translate(locale, copy.upcomingTitle)}
+        </h2>
         {upcoming.length > 0 ? (
           <UpcomingAgenda
             events={upcoming}
@@ -346,14 +341,9 @@ export default function EventsPageClient({
       </section>
 
       <section className="border-t border-foreground/20 pt-12 sm:pt-16" aria-labelledby="past-events">
-        <div className="mb-7 flex items-baseline justify-between gap-4">
-          <h2 id="past-events" className="font-mono text-xs uppercase tracking-[0.2em]">
-            {translate(locale, copy.pastTitle)}
-          </h2>
-          <span className="font-mono text-[10px] text-foreground/60" aria-hidden="true">
-            {String(past.length).padStart(2, "0")}
-          </span>
-        </div>
+        <h2 id="past-events" className="mb-7 font-mono text-xs uppercase tracking-[0.2em]">
+          {translate(locale, copy.pastTitle)}
+        </h2>
         {past.length > 0 ? (
           <EventsArchive
             events={past}

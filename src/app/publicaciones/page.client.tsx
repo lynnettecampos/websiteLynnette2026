@@ -90,9 +90,6 @@ export default function PublicationsPageClient({
           {translate(locale, copy.title)}
         </h1>
         <div className="space-y-3 lg:col-span-3 lg:pb-1">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/60">
-            {locale === "es" ? "Índice bibliográfico" : "Bibliographic index"} · {publications.length}
-          </p>
           <p className="max-w-sm text-sm leading-6 text-foreground/60">
             {translate(locale, copy.introduction)}
           </p>
@@ -123,22 +120,12 @@ export default function PublicationsPageClient({
               return (
                 <li key={publication.slug} className="border-b border-foreground/20">
                   <article
-                    className={`grid gap-5 py-7 transition-colors sm:grid-cols-[3rem_minmax(0,1fr)] lg:py-8 ${
+                    className={`py-7 transition-colors lg:py-8 ${
                       isActive ? "text-foreground" : "text-foreground/72"
                     }`}
                     onPointerEnter={() => setActiveSlug(publication.slug)}
                     onFocusCapture={() => setActiveSlug(publication.slug)}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setActiveSlug(publication.slug)}
-                      className="self-start font-mono text-[10px] text-foreground/60 outline-none transition hover:text-foreground focus-visible:text-foreground"
-                      aria-label={`${locale === "es" ? "Mostrar portada de" : "Show cover for"} ${translate(locale, publication.title)}`}
-                      aria-pressed={isActive}
-                    >
-                      {String(index + 1).padStart(2, "0")}
-                    </button>
-
                     <div className="space-y-5">
                       <div className="w-28 sm:w-36 lg:hidden">
                         <Cover publication={publication} priority={index === 0} />
@@ -149,7 +136,15 @@ export default function PublicationsPageClient({
                           {translate(locale, PUBLICATION_LABELS[publication.type])}
                         </p>
                         <h2 className="max-w-2xl text-2xl leading-[1.08] tracking-[-0.03em] sm:text-3xl">
-                          {translate(locale, publication.title)}
+                          <button
+                            type="button"
+                            onClick={() => setActiveSlug(publication.slug)}
+                            className="text-left outline-none transition-colors hover:text-[var(--accent)] focus-visible:text-[var(--accent)]"
+                            aria-label={`${locale === "es" ? "Mostrar portada de" : "Show cover for"} ${translate(locale, publication.title)}`}
+                            aria-pressed={isActive}
+                          >
+                            {translate(locale, publication.title)}
+                          </button>
                         </h2>
                         <p className="text-sm leading-6 text-foreground/60">
                           {translate(locale, publication.publisher)}
