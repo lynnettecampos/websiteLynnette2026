@@ -56,7 +56,7 @@ const getPublicationsUncached = async (includePrivate = false): Promise<Publicat
 
 const getPublicationsCached = unstable_cache(
   () => getPublicationsUncached(false),
-  ["public-publications-v1"],
+  ["public-publications-v2"],
   {
     revalidate: PUBLIC_CONTENT_REVALIDATE_SECONDS,
     tags: [CONTENT_CACHE_TAGS.publications],

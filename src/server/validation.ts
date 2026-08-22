@@ -414,6 +414,8 @@ export const publicationSchema = z.object({
   summary: siteLocaleTextSchema.optional(),
   url: z.string().url().optional(),
   downloadUrl: z.string().url().optional(),
+  pdfPublicId: z.string().min(1).optional(),
+  projectSlug: z.string().min(1).optional(),
   cover: optionalArtistImageSchema,
   isPrivate: z.boolean().optional(),
 });

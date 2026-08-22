@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 import { useLocale } from "@/components/site/locale-context";
 import type { Publication, PublicationType } from "@/domain/artist";
+import type { Project } from "@/domain/projects";
 import type { SiteContent } from "@/domain/site";
 import { translate } from "@/lib/i18n";
 
@@ -59,9 +61,11 @@ function Cover({ publication, priority = false }: { publication: Publication; pr
 
 export default function PublicationsPageClient({
   publications,
+  projects,
   copy,
 }: {
   publications: Publication[];
+  projects: Pick<Project, "slug" | "name">[];
   copy: SiteContent["publicationsPage"];
 }) {
   const { locale } = useLocale();
@@ -106,6 +110,9 @@ export default function PublicationsPageClient({
           <ol className="border-t border-foreground/20 lg:col-span-8 lg:col-start-5">
             {orderedPublications.map((publication, index) => {
               const isActive = publication.slug === activePublication.slug;
+              const relatedProject = publication.projectSlug
+                ? projects.find((project) => project.slug === publication.projectSlug)
+                : undefined;
 
               return (
                 <li key={publication.slug} className="border-b border-foreground/20">
@@ -151,8 +158,17 @@ export default function PublicationsPageClient({
                         </p>
                       ) : null}
 
-                      {(publication.url || publication.downloadUrl) && (
+                      {(publication.url || publication.downloadUrl || relatedProject) && (
                         <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1 text-xs">
+                          {relatedProject ? (
+                            <Link
+                              href={`/proyectos/${relatedProject.slug}`}
+                              className="inline-flex items-center gap-2 border-b border-foreground/35 pb-0.5 outline-none transition hover:border-foreground focus-visible:border-foreground"
+                            >
+                              {locale === "es" ? "Ver proyecto relacionado" : "View related project"}
+                              <span aria-hidden="true">↗</span>
+                            </Link>
+                          ) : null}
                           {publication.url ? (
                             <a
                               href={publication.url}

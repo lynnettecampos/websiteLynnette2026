@@ -4851,7 +4851,9 @@ const AdminDashboard = ({
       >
         <PublicationsManager
           publications={publications}
+          projects={projects}
           databaseReady={databaseReady}
+          cloudinaryReady={cloudinaryReady}
           openCloudinaryPicker={pickerCallback}
         />
         <SiteContentManager

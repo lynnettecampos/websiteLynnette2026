@@ -151,6 +151,56 @@ const requestJson = async <T,>(response: Response, fallback: string): Promise<T>
   return payload as T;
 };
 
+const uploadDocumentToCloudinary = async (file: File, folder: string) => {
+  const signature = await requestJson<{
+    uploadUrl: string;
+    apiKey: string;
+    signature: string;
+    timestamp: number;
+    folder?: string;
+  }>(
+    await fetch("/api/uploads/signature", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folder }),
+    }),
+    "No fue posible autorizar la subida del PDF",
+  );
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("api_key", signature.apiKey);
+  formData.append("timestamp", String(signature.timestamp));
+  formData.append("signature", signature.signature);
+
+  if (signature.folder) {
+    formData.append("folder", signature.folder);
+  }
+
+  const response = await fetch(signature.uploadUrl, {
+    method: "POST",
+    body: formData,
+  });
+  const payload = (await response.json().catch(() => null)) as {
+    public_id?: string;
+    secure_url?: string;
+    url?: string;
+    error?: { message?: string } | string;
+  } | null;
+
+  if (!response.ok || !payload?.public_id || !(payload.secure_url || payload.url)) {
+    const cloudinaryMessage =
+      typeof payload?.error === "string" ? payload.error : payload?.error?.message;
+    throw new Error(cloudinaryMessage || "No fue posible subir el PDF");
+  }
+
+  return {
+    publicId: payload.public_id,
+    src: payload.secure_url ?? payload.url ?? "",
+  };
+};
+
 const encodeSlug = (slug: string) => encodeURIComponent(slug);
 
 function DatabaseNotice({ databaseReady }: { databaseReady: boolean }) {
@@ -1017,6 +1067,8 @@ type PublicationDraft = {
   summary: LocaleDraft;
   url: string;
   downloadUrl: string;
+  pdfPublicId: string;
+  projectSlug: string;
   cover: ImageDraft;
   isPrivate: boolean;
 };
@@ -1030,6 +1082,8 @@ const emptyPublicationDraft = (): PublicationDraft => ({
   summary: emptyLocale(),
   url: "",
   downloadUrl: "",
+  pdfPublicId: "",
+  projectSlug: "",
   cover: toImageDraft(),
   isPrivate: false,
 });
@@ -1043,23 +1097,30 @@ const toPublicationDraft = (publication: Publication): PublicationDraft => ({
   summary: toLocaleDraft(publication.summary),
   url: publication.url ?? "",
   downloadUrl: publication.downloadUrl ?? "",
+  pdfPublicId: publication.pdfPublicId ?? "",
+  projectSlug: publication.projectSlug ?? "",
   cover: toImageDraft(publication.cover),
   isPrivate: Boolean(publication.isPrivate),
 });
 
 export function PublicationsManager({
   publications,
+  projects,
   databaseReady,
+  cloudinaryReady,
   openCloudinaryPicker,
 }: {
   publications: Publication[];
+  projects: Project[];
   databaseReady: boolean;
+  cloudinaryReady: boolean;
   openCloudinaryPicker?: OpenCloudinaryPicker;
 }) {
   const router = useRouter();
   const [selectedSlug, setSelectedSlug] = useState(NEW_RECORD);
   const [draft, setDraft] = useState<PublicationDraft>(() => emptyPublicationDraft());
   const [status, setStatus] = useState<MutationStatus>("idle");
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const orderedPublications = useMemo(
     () =>
@@ -1102,6 +1163,8 @@ export function PublicationsManager({
       );
       const url = draft.url.trim();
       const downloadUrl = draft.downloadUrl.trim();
+      const pdfPublicId = draft.pdfPublicId.trim();
+      const projectSlug = draft.projectSlug.trim();
       const payload: Publication = {
         slug,
         title: requireLocale(draft.title, "el título de la publicación"),
@@ -1111,6 +1174,8 @@ export function PublicationsManager({
         ...(summary ? { summary } : {}),
         ...(url ? { url } : {}),
         ...(downloadUrl ? { downloadUrl } : {}),
+        ...(downloadUrl && pdfPublicId ? { pdfPublicId } : {}),
+        ...(projectSlug ? { projectSlug } : {}),
         ...(cover ? { cover } : {}),
         isPrivate: draft.isPrivate,
       };
@@ -1289,17 +1354,136 @@ export function PublicationsManager({
               />
             </label>
             <label className={labelClassName}>
-              <span>URL de descarga (opcional)</span>
+              <span>URL del PDF (opcional)</span>
               <input
                 type="url"
                 value={draft.downloadUrl}
                 onChange={(event) =>
-                  setDraft((previous) => ({ ...previous, downloadUrl: event.target.value }))
+                  setDraft((previous) => ({
+                    ...previous,
+                    downloadUrl: event.target.value,
+                    pdfPublicId:
+                      event.target.value === previous.downloadUrl ? previous.pdfPublicId : "",
+                  }))
                 }
                 className={inputClassName}
                 placeholder="https://…"
               />
             </label>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className={labelClassName}>
+              <span>Proyecto relacionado (opcional)</span>
+              <select
+                value={draft.projectSlug}
+                onChange={(event) =>
+                  setDraft((previous) => ({ ...previous, projectSlug: event.target.value }))
+                }
+                className={inputClassName}
+              >
+                <option value="">Sin proyecto relacionado</option>
+                {[...projects]
+                  .sort((first, second) =>
+                    (first.name.es || first.name.en).localeCompare(second.name.es || second.name.en),
+                  )
+                  .map((project) => (
+                    <option key={project.slug} value={project.slug}>
+                      {project.name.es || project.name.en}
+                      {project.isPrivate ? " · privado" : ""}
+                    </option>
+                  ))}
+              </select>
+            </label>
+
+            <div className="space-y-2 rounded-xl border border-foreground/15 bg-foreground/5 p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/60">
+                Archivo PDF (opcional)
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <label
+                  className={`${secondaryButtonClassName} ${
+                    !cloudinaryReady || isUploadingPdf ? "pointer-events-none opacity-45" : "cursor-pointer"
+                  }`}
+                >
+                  {isUploadingPdf ? "Subiendo PDF…" : "Subir PDF"}
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="sr-only"
+                    disabled={!cloudinaryReady || isUploadingPdf}
+                    onChange={async (event) => {
+                      const input = event.currentTarget;
+                      const file = input.files?.[0];
+                      if (!file) return;
+
+                      if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+                        setFeedback({ kind: "error", message: "Selecciona un archivo PDF válido." });
+                        input.value = "";
+                        return;
+                      }
+
+                      setIsUploadingPdf(true);
+                      setFeedback(null);
+
+                      try {
+                        const uploaded = await uploadDocumentToCloudinary(
+                          file,
+                          `publications/${draft.slug.trim() || "nueva"}/pdf`,
+                        );
+                        setDraft((previous) => ({
+                          ...previous,
+                          downloadUrl: uploaded.src,
+                          pdfPublicId: uploaded.publicId,
+                        }));
+                        setFeedback({
+                          kind: "success",
+                          message: "PDF subido. Guarda la publicación para conservar el cambio.",
+                        });
+                      } catch (error) {
+                        setFeedback({
+                          kind: "error",
+                          message: error instanceof Error ? error.message : "No fue posible subir el PDF",
+                        });
+                      } finally {
+                        setIsUploadingPdf(false);
+                        input.value = "";
+                      }
+                    }}
+                  />
+                </label>
+                {draft.downloadUrl ? (
+                  <>
+                    <a
+                      href={draft.downloadUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={secondaryButtonClassName}
+                    >
+                      Ver PDF
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDraft((previous) => ({
+                          ...previous,
+                          downloadUrl: "",
+                          pdfPublicId: "",
+                        }))
+                      }
+                      className={destructiveButtonClassName}
+                    >
+                      Quitar PDF
+                    </button>
+                  </>
+                ) : null}
+              </div>
+              {!cloudinaryReady ? (
+                <p className="text-xs leading-5 text-foreground/50">
+                  Configura Cloudinary para subir archivos; también puedes pegar una URL arriba.
+                </p>
+              ) : null}
+            </div>
           </div>
 
           <OptionalImageEditor
@@ -1334,7 +1518,7 @@ export function PublicationsManager({
             </button>
             <button
               type="submit"
-              disabled={!databaseReady || status !== "idle"}
+              disabled={!databaseReady || status !== "idle" || isUploadingPdf}
               className={primaryButtonClassName}
             >
               {status === "saving" ? "Guardando…" : "Guardar publicación"}

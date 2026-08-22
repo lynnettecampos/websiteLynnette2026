@@ -126,6 +126,8 @@ export const upsertPublication = async (publication: Publication): Promise<Publi
     summary,
     url,
     downloadUrl,
+    pdfPublicId,
+    projectSlug,
     cover,
     isPrivate,
     ...requiredPublication
@@ -134,6 +136,8 @@ export const upsertPublication = async (publication: Publication): Promise<Publi
     ...(summary === undefined ? { summary: "" } : {}),
     ...(url === undefined ? { url: "" } : {}),
     ...(downloadUrl === undefined ? { downloadUrl: "" } : {}),
+    ...(pdfPublicId === undefined ? { pdfPublicId: "" } : {}),
+    ...(projectSlug === undefined ? { projectSlug: "" } : {}),
     ...(cover === undefined ? { cover: "" } : {}),
     ...(isPrivate === undefined ? { isPrivate: "" } : {}),
   };
@@ -146,6 +150,8 @@ export const upsertPublication = async (publication: Publication): Promise<Publi
         ...(summary !== undefined ? { summary } : {}),
         ...(url !== undefined ? { url } : {}),
         ...(downloadUrl !== undefined ? { downloadUrl } : {}),
+        ...(pdfPublicId !== undefined ? { pdfPublicId } : {}),
+        ...(projectSlug !== undefined ? { projectSlug } : {}),
         ...(cover !== undefined ? { cover } : {}),
         ...(isPrivate !== undefined ? { isPrivate } : {}),
         updatedAt: new Date(),

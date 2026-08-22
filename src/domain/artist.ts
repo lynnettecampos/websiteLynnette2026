@@ -52,6 +52,8 @@ export type Publication = {
   summary?: LocaleText;
   url?: string;
   downloadUrl?: string;
+  pdfPublicId?: string;
+  projectSlug?: string;
   cover?: ProjectGalleryImage;
   isPrivate?: boolean;
 };
