@@ -360,10 +360,12 @@ const readProjectFile = (filePath: string): { project: Project; order: number } 
   return { project, order: frontmatter.order ?? Number.MAX_SAFE_INTEGER };
 };
 
-const PROJECT_FILES = fs
-  .readdirSync(PROJECTS_DIR)
-  .filter((file) => file.endsWith(".md"))
-  .map((file) => path.join(PROJECTS_DIR, file));
+const PROJECT_FILES = fs.existsSync(PROJECTS_DIR)
+  ? fs
+      .readdirSync(PROJECTS_DIR)
+      .filter((file) => file.endsWith(".md"))
+      .map((file) => path.join(PROJECTS_DIR, file))
+  : [];
 
 export const PROJECTS: Project[] = PROJECT_FILES
   .map(readProjectFile)

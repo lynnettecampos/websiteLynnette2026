@@ -115,10 +115,12 @@ const readClientFile = (filePath: string): { client: Client; order: number } => 
   return { client, order: frontmatter.order ?? Number.MAX_SAFE_INTEGER };
 };
 
-const CLIENT_FILES = fs
-  .readdirSync(CLIENTS_DIR)
-  .filter((file) => file.endsWith(".md"))
-  .map((file) => path.join(CLIENTS_DIR, file));
+const CLIENT_FILES = fs.existsSync(CLIENTS_DIR)
+  ? fs
+      .readdirSync(CLIENTS_DIR)
+      .filter((file) => file.endsWith(".md"))
+      .map((file) => path.join(CLIENTS_DIR, file))
+  : [];
 
 const CLIENT_RESULTS = CLIENT_FILES.map(readClientFile).sort((a, b) => {
   if (a.order !== b.order) {
