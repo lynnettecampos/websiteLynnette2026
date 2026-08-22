@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getPublications } from "@/data/artist";
+import { CONTENT_CACHE_TAGS, invalidatePublicContent } from "@/lib/content-cache";
 import { hasDatabaseConfig } from "@/lib/env";
 import { verifyRequestSession } from "@/server/auth";
 import { upsertPublication } from "@/server/artist";
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
     );
   }
   const publication = await upsertPublication(parsed.data);
+  if (publication) invalidatePublicContent(CONTENT_CACHE_TAGS.publications);
   return publication
     ? NextResponse.json(publication)
     : NextResponse.json({ error: "Failed to save publication" }, { status: 500 });

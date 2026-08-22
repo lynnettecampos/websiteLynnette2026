@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getArtistEvents } from "@/data/artist";
+import { CONTENT_CACHE_TAGS, invalidatePublicContent } from "@/lib/content-cache";
 import { hasDatabaseConfig } from "@/lib/env";
 import { verifyRequestSession } from "@/server/auth";
 import { upsertArtistEvent } from "@/server/artist";
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
     );
   }
   const event = await upsertArtistEvent(parsed.data);
+  if (event) invalidatePublicContent(CONTENT_CACHE_TAGS.events);
   return event
     ? NextResponse.json(event)
     : NextResponse.json({ error: "Failed to save event" }, { status: 500 });

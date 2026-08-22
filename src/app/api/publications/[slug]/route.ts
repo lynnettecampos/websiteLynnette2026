@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { CONTENT_CACHE_TAGS, invalidatePublicContent } from "@/lib/content-cache";
 import { hasDatabaseConfig } from "@/lib/env";
 import { verifyRequestSession } from "@/server/auth";
 import { deletePublication, upsertPublication } from "@/server/artist";
@@ -18,6 +19,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   const parsed = publicationSchema.safeParse({ ...record, slug });
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const publication = await upsertPublication(parsed.data);
+  if (publication) invalidatePublicContent(CONTENT_CACHE_TAGS.publications);
   return publication
     ? NextResponse.json(publication)
     : NextResponse.json({ error: "Failed to save publication" }, { status: 500 });
@@ -29,7 +31,10 @@ export async function DELETE(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { slug } = await context.params;
-  return (await deletePublication(slug))
-    ? NextResponse.json({ success: true })
-    : NextResponse.json({ error: "Failed to delete publication" }, { status: 500 });
+  const deleted = await deletePublication(slug);
+  if (!deleted) {
+    return NextResponse.json({ error: "Failed to delete publication" }, { status: 500 });
+  }
+  invalidatePublicContent(CONTENT_CACHE_TAGS.publications);
+  return NextResponse.json({ success: true });
 }

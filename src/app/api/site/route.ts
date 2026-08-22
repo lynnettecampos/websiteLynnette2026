@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import type { SiteContent } from "@/domain/site";
+import { CONTENT_CACHE_TAGS, invalidatePublicContent } from "@/lib/content-cache";
 import { hasDatabaseConfig } from "@/lib/env";
 import { verifyRequestSession } from "@/server/auth";
 import { fetchSiteContent, upsertSiteContent } from "@/server/site";
@@ -45,5 +46,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to save site content" }, { status: 500 });
   }
 
+  invalidatePublicContent(CONTENT_CACHE_TAGS.site);
   return NextResponse.json(site satisfies SiteContent);
 }

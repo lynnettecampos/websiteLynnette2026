@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import type { Project } from "@/domain/projects";
-import { getProjectBySlug, getProjects, refreshProjectsCache } from "@/data/projects";
+import { getProjectBySlug, getProjects } from "@/data/projects";
+import { CONTENT_CACHE_TAGS, invalidatePublicContent } from "@/lib/content-cache";
 import { hasDatabaseConfig } from "@/lib/env";
 import { upsertProject } from "@/server/projects";
 import { projectPayloadSchema } from "@/server/validation";
@@ -57,6 +58,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to save project" }, { status: 500 });
   }
 
-  await refreshProjectsCache();
+  invalidatePublicContent(CONTENT_CACHE_TAGS.projects);
   return NextResponse.json(project satisfies Project);
 }

@@ -37,6 +37,10 @@ let warnedMissingDriver = false;
 let warnedConnectionFailure = false;
 let activeMongoUri: string | null = null;
 let parsedDatabaseName: string | null | undefined;
+let mongoRetryAfter = 0;
+
+const MONGO_RETRY_COOLDOWN_MS = 60_000;
+const MONGO_SERVER_SELECTION_TIMEOUT_MS = 2_000;
 
 const getDatabaseFromUri = (): string | null => {
   if (parsedDatabaseName !== undefined) {
@@ -107,13 +111,14 @@ const shouldRetryWithSrvFallback = (error: unknown): boolean => {
 const connectWithUri = async (mongodb: MongoModule, uri: string): Promise<MongoClientInstance> => {
   const clientInstance = new mongodb.MongoClient(uri, {
     maxPoolSize: 5,
-    serverSelectionTimeoutMS: 5000,
+    serverSelectionTimeoutMS: MONGO_SERVER_SELECTION_TIMEOUT_MS,
   });
 
   console.info(`[MongoDB] Intentando conectar a ${describeUri(uri)}`);
 
   const connectedClient = await clientInstance.connect();
   activeMongoUri = uri;
+  mongoRetryAfter = 0;
   warnedConnectionFailure = false;
   return connectedClient;
 };
@@ -156,6 +161,10 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
     return null;
   }
 
+  if (!mongoClientPromise && Date.now() < mongoRetryAfter) {
+    return null;
+  }
+
   const mongodb = await loadMongoModule();
 
   if (!mongodb) {
@@ -185,6 +194,7 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
     return client;
   } catch (error) {
     mongoClientPromise = null;
+    mongoRetryAfter = Date.now() + MONGO_RETRY_COOLDOWN_MS;
     if (!warnedConnectionFailure) {
       warnedConnectionFailure = true;
       const errorMessage =

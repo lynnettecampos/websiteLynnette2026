@@ -1,6 +1,12 @@
+import { unstable_cache } from "next/cache";
+
 import type { Project } from "@/domain/projects";
 import { PROJECTS } from "@/content/projects";
 import { mergeFallbackRecordsUntilInitialized } from "@/data/content-bootstrap";
+import {
+  CONTENT_CACHE_TAGS,
+  PUBLIC_CONTENT_REVALIDATE_SECONDS,
+} from "@/lib/content-cache";
 import { hasDatabaseConfig } from "@/lib/env";
 import {
   fetchProjectBySlug,
@@ -46,7 +52,7 @@ const sortProjectsByTimeline = (projects: Project[]): Project[] => {
 const filterPrivate = (projects: Project[], includePrivate: boolean) =>
   includePrivate ? projects : projects.filter((project) => !project.isPrivate);
 
-export const getProjects = async (includePrivate = false): Promise<Project[]> => {
+const getProjectsUncached = async (includePrivate = false): Promise<Project[]> => {
   const fallback = () => sortProjectsByTimeline(filterPrivate(PROJECTS, includePrivate));
 
   if (!hasDatabaseConfig()) {
@@ -66,6 +72,18 @@ export const getProjects = async (includePrivate = false): Promise<Project[]> =>
   const resolvedProjects = mergeFallbackRecordsUntilInitialized(PROJECTS, projects, initialized);
   return sortProjectsByTimeline(filterPrivate(resolvedProjects, includePrivate));
 };
+
+const getPublicProjectsCached = unstable_cache(
+  () => getProjectsUncached(false),
+  ["public-projects-v1"],
+  {
+    revalidate: PUBLIC_CONTENT_REVALIDATE_SECONDS,
+    tags: [CONTENT_CACHE_TAGS.projects],
+  },
+);
+
+export const getProjects = async (includePrivate = false): Promise<Project[]> =>
+  includePrivate ? getProjectsUncached(true) : getPublicProjectsCached();
 
 export const getProjectsForHome = async (): Promise<Project[]> => {
   const projects = await getProjects();
@@ -104,24 +122,17 @@ export const getProjectBySlug = async (
     return fallbackLookup();
   }
 
+  if (!includePrivate) {
+    const projects = await getProjects();
+    return projects.find((item) => item.slug === slug) ?? null;
+  }
+
   const project = await fetchProjectBySlug(slug);
 
-  if (project && (includePrivate || !project.isPrivate)) {
+  if (project) {
     return project;
   }
 
   const hydratedProjects = await getProjects(true);
-  const fallback = hydratedProjects.find((item) => item.slug === slug) ?? null;
-  return fallback && (includePrivate || !fallback.isPrivate) ? fallback : null;
-};
-
-export const refreshProjectsCache = async (): Promise<void> => {
-  if (!hasDatabaseConfig()) {
-    return;
-  }
-
-  const projects = await fetchProjectsFromDatabase();
-  if (!projects) {
-    logProjectFallback("no se pudo contactar la base de datos");
-  }
+  return hydratedProjects.find((item) => item.slug === slug) ?? null;
 };

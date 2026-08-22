@@ -1,5 +1,11 @@
+import { unstable_cache } from "next/cache";
+
 import { DEFAULT_SITE_CONTENT } from "@/content/site";
 import type { SiteContent } from "@/domain/site";
+import {
+  CONTENT_CACHE_TAGS,
+  PUBLIC_CONTENT_REVALIDATE_SECONDS,
+} from "@/lib/content-cache";
 import { hasDatabaseConfig } from "@/lib/env";
 import { fetchSiteContent } from "@/server/site";
 
@@ -49,7 +55,7 @@ const mergeSiteContent = (fetched: SiteContent | null): SiteContent => {
   };
 };
 
-export const getSiteContent = async (): Promise<SiteContent> => {
+const getSiteContentUncached = async (): Promise<SiteContent> => {
   if (!hasDatabaseConfig()) {
     return DEFAULT_SITE_CONTENT;
   }
@@ -57,3 +63,15 @@ export const getSiteContent = async (): Promise<SiteContent> => {
   const site = await fetchSiteContent();
   return mergeSiteContent(site);
 };
+
+const getSiteContentCached = unstable_cache(
+  getSiteContentUncached,
+  ["public-site-content-v1"],
+  {
+    revalidate: PUBLIC_CONTENT_REVALIDATE_SECONDS,
+    tags: [CONTENT_CACHE_TAGS.site],
+  },
+);
+
+export const getSiteContent = async (): Promise<SiteContent> =>
+  getSiteContentCached();
