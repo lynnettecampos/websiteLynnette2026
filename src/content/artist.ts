@@ -115,5 +115,5 @@ export const PUBLICATIONS_COPY = {
     en: "Publications will be added soon.",
   },
   openLabel: { es: "Abrir publicación", en: "Open publication" },
-  downloadLabel: { es: "Descargar", en: "Download" },
+  downloadLabel: { es: "Ver documento", en: "View document" },
 } as const;

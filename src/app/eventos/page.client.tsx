@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { useLocale } from "@/components/site/locale-context";
 import type { ArtistEvent, ArtistEventType } from "@/domain/artist";
+import type { Project } from "@/domain/projects";
 import type { SiteContent } from "@/domain/site";
 import { translate, type Locale } from "@/lib/i18n";
 
@@ -34,6 +35,8 @@ const getCalendarParts = (value: string, locale: Locale) => ({
     .replace(".", ""),
   year: new Intl.DateTimeFormat(dateLocale(locale), { year: "numeric" }).format(parseDate(value)),
 });
+
+type RelatedProject = Pick<Project, "slug" | "name">;
 
 function EventImage({
   event,
@@ -71,42 +74,53 @@ function EventImage({
 
 function EventActions({
   event,
+  relatedProject,
   locale,
   detailsLabel,
 }: {
   event: ArtistEvent;
+  relatedProject?: RelatedProject;
   locale: Locale;
   detailsLabel: string;
 }) {
-  if (!event.projectSlug && !event.url) return null;
+  if (!relatedProject && !event.url) return null;
 
   const linkClassName =
     "group inline-flex items-center gap-2 border-b border-foreground/35 pb-0.5 text-xs outline-none transition hover:border-foreground focus-visible:border-foreground";
 
   return (
-    <div className="flex flex-wrap gap-x-5 gap-y-2">
-      {event.projectSlug ? (
-        <Link href={`/proyectos/${event.projectSlug}`} className={linkClassName}>
-          {locale === "es" ? "Ver proyecto" : "View project"}
-          <span aria-hidden="true">↗</span>
-        </Link>
+    <div className="space-y-2">
+      {relatedProject ? (
+        <p className="max-w-xs font-mono text-[10px] uppercase leading-4 tracking-[0.14em] text-foreground/60">
+          {locale === "es" ? "Proyecto" : "Project"} · {translate(locale, relatedProject.name)}
+        </p>
       ) : null}
-      {event.url ? (
-        <a href={event.url} target="_blank" rel="noreferrer" className={linkClassName}>
-          {detailsLabel}
-          <span aria-hidden="true">↗</span>
-        </a>
-      ) : null}
+      <div className="flex flex-wrap gap-x-5 gap-y-2">
+        {relatedProject ? (
+          <Link href={`/proyectos/${relatedProject.slug}`} className={linkClassName}>
+            {locale === "es" ? "Ver proyecto" : "View project"}
+            <span aria-hidden="true">↗</span>
+          </Link>
+        ) : null}
+        {event.url ? (
+          <a href={event.url} target="_blank" rel="noreferrer" className={linkClassName}>
+            {detailsLabel}
+            <span aria-hidden="true">↗</span>
+          </a>
+        ) : null}
+      </div>
     </div>
   );
 }
 
 function UpcomingAgenda({
   events,
+  projects,
   locale,
   detailsLabel,
 }: {
   events: ArtistEvent[];
+  projects: RelatedProject[];
   locale: Locale;
   detailsLabel: string;
 }) {
@@ -115,6 +129,9 @@ function UpcomingAgenda({
       {events.map((event) => {
         const calendar = getCalendarParts(event.startDate, locale);
         const fullDate = formatEventDate(event.startDate, locale);
+        const relatedProject = event.projectSlug
+          ? projects.find((project) => project.slug === event.projectSlug)
+          : undefined;
 
         return (
           <li key={event.slug} className="border-b border-foreground/20">
@@ -159,7 +176,12 @@ function UpcomingAgenda({
 
               <div className="space-y-4 md:col-start-2 lg:col-start-3 lg:flex lg:flex-col lg:items-end">
                 <EventImage event={event} locale={locale} />
-                <EventActions event={event} locale={locale} detailsLabel={detailsLabel} />
+                <EventActions
+                  event={event}
+                  relatedProject={relatedProject}
+                  locale={locale}
+                  detailsLabel={detailsLabel}
+                />
               </div>
             </article>
           </li>
@@ -171,10 +193,12 @@ function UpcomingAgenda({
 
 function EventsArchive({
   events,
+  projects,
   locale,
   detailsLabel,
 }: {
   events: ArtistEvent[];
+  projects: RelatedProject[];
   locale: Locale;
   detailsLabel: string;
 }) {
@@ -199,48 +223,61 @@ function EventsArchive({
             {year}
           </h3>
           <ol className="divide-y divide-foreground/15 border-t border-foreground/15">
-            {yearEvents.map((event) => (
-              <li key={event.slug}>
-                <article className="grid gap-4 py-6 sm:grid-cols-[7rem_minmax(0,1fr)] lg:grid-cols-[7rem_minmax(0,1fr)_11rem]">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/60">
-                    <time dateTime={event.startDate}>
-                      {formatEventDate(event.startDate, locale, false)}
-                    </time>
-                    {event.endDate && event.endDate !== event.startDate ? (
-                      <>
-                        <span aria-hidden="true"> — </span>
-                        <span className="sr-only">{locale === "es" ? "hasta" : "through"} </span>
-                        <time dateTime={event.endDate}>
-                          {formatEventDate(event.endDate, locale, false)}
-                        </time>
-                      </>
-                    ) : null}
-                  </p>
-                  <div className="space-y-2">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/60">
-                      {translate(locale, EVENT_LABELS[event.type])}
+            {yearEvents.map((event) => {
+              const relatedProject = event.projectSlug
+                ? projects.find((project) => project.slug === event.projectSlug)
+                : undefined;
+
+              return (
+                <li key={event.slug}>
+                  <article className="grid gap-4 py-6 sm:grid-cols-[7rem_minmax(0,1fr)] lg:grid-cols-[7rem_minmax(0,1fr)_11rem]">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/60">
+                      <time dateTime={event.startDate}>
+                        {formatEventDate(event.startDate, locale, false)}
+                      </time>
+                      {event.endDate && event.endDate !== event.startDate ? (
+                        <>
+                          <span aria-hidden="true"> — </span>
+                          <span className="sr-only">
+                            {locale === "es" ? "hasta" : "through"}{" "}
+                          </span>
+                          <time dateTime={event.endDate}>
+                            {formatEventDate(event.endDate, locale, false)}
+                          </time>
+                        </>
+                      ) : null}
                     </p>
-                    <h4 className="text-xl leading-tight tracking-[-0.02em] sm:text-2xl">
-                      {translate(locale, event.title)}
-                    </h4>
-                    <p className="text-sm leading-5 text-foreground/60">
-                      {[translate(locale, event.venue), translate(locale, event.location)]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                    {event.description ? (
-                      <p className="max-w-2xl pt-1 text-sm leading-6 text-foreground/60">
-                        {translate(locale, event.description)}
+                    <div className="space-y-2">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/60">
+                        {translate(locale, EVENT_LABELS[event.type])}
                       </p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-4 sm:col-start-2 lg:col-start-3 lg:flex lg:flex-col lg:items-end">
-                    <EventImage event={event} locale={locale} compact />
-                    <EventActions event={event} locale={locale} detailsLabel={detailsLabel} />
-                  </div>
-                </article>
-              </li>
-            ))}
+                      <h4 className="text-xl leading-tight tracking-[-0.02em] sm:text-2xl">
+                        {translate(locale, event.title)}
+                      </h4>
+                      <p className="text-sm leading-5 text-foreground/60">
+                        {[translate(locale, event.venue), translate(locale, event.location)]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                      {event.description ? (
+                        <p className="max-w-2xl pt-1 text-sm leading-6 text-foreground/60">
+                          {translate(locale, event.description)}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-4 sm:col-start-2 lg:col-start-3 lg:flex lg:flex-col lg:items-end">
+                      <EventImage event={event} locale={locale} compact />
+                      <EventActions
+                        event={event}
+                        relatedProject={relatedProject}
+                        locale={locale}
+                        detailsLabel={detailsLabel}
+                      />
+                    </div>
+                  </article>
+                </li>
+              );
+            })}
           </ol>
         </section>
       ))}
@@ -250,9 +287,11 @@ function EventsArchive({
 
 export default function EventsPageClient({
   events,
+  projects,
   copy,
 }: {
   events: ArtistEvent[];
+  projects: RelatedProject[];
   copy: SiteContent["eventsPage"];
 }) {
   const { locale } = useLocale();
@@ -293,7 +332,12 @@ export default function EventsPageClient({
           </span>
         </div>
         {upcoming.length > 0 ? (
-          <UpcomingAgenda events={upcoming} locale={locale} detailsLabel={detailsLabel} />
+          <UpcomingAgenda
+            events={upcoming}
+            projects={projects}
+            locale={locale}
+            detailsLabel={detailsLabel}
+          />
         ) : (
           <p className="border-t border-foreground/20 py-8 text-xl text-foreground/60">
             {translate(locale, copy.emptyUpcoming)}
@@ -311,7 +355,12 @@ export default function EventsPageClient({
           </span>
         </div>
         {past.length > 0 ? (
-          <EventsArchive events={past} locale={locale} detailsLabel={detailsLabel} />
+          <EventsArchive
+            events={past}
+            projects={projects}
+            locale={locale}
+            detailsLabel={detailsLabel}
+          />
         ) : (
           <p className="border-t border-foreground/20 py-8 text-xl text-foreground/60">
             {translate(locale, copy.emptyPast)}

@@ -26,5 +26,11 @@ export default async function EventsPage() {
       : event,
   );
 
-  return <EventsPageClient events={publicEvents} copy={siteContent.eventsPage} />;
+  return (
+    <EventsPageClient
+      events={publicEvents}
+      projects={projects.map(({ slug, name }) => ({ slug, name }))}
+      copy={siteContent.eventsPage}
+    />
+  );
 }

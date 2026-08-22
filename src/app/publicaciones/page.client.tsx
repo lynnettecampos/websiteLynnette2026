@@ -76,6 +76,12 @@ export default function PublicationsPageClient({
   const activePublication =
     orderedPublications.find((publication) => publication.slug === activeSlug) ??
     orderedPublications[0];
+  const configuredDocumentLabel = translate(locale, copy.downloadLabel).trim();
+  const documentLabel = ["descargar", "download"].includes(configuredDocumentLabel.toLowerCase())
+    ? locale === "es"
+      ? "Ver documento"
+      : "View document"
+    : configuredDocumentLabel;
 
   return (
     <div>
@@ -159,38 +165,45 @@ export default function PublicationsPageClient({
                       ) : null}
 
                       {(publication.url || publication.downloadUrl || relatedProject) && (
-                        <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1 text-xs">
+                        <div className="space-y-2 pt-1 text-xs">
                           {relatedProject ? (
-                            <Link
-                              href={`/proyectos/${relatedProject.slug}`}
-                              className="inline-flex items-center gap-2 border-b border-foreground/35 pb-0.5 outline-none transition hover:border-foreground focus-visible:border-foreground"
-                            >
-                              {locale === "es" ? "Ver proyecto relacionado" : "View related project"}
-                              <span aria-hidden="true">↗</span>
-                            </Link>
+                            <p className="font-mono text-[10px] uppercase leading-4 tracking-[0.14em] text-foreground/60">
+                              {locale === "es" ? "Proyecto" : "Project"} · {translate(locale, relatedProject.name)}
+                            </p>
                           ) : null}
-                          {publication.url ? (
-                            <a
-                              href={publication.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-2 border-b border-foreground/35 pb-0.5 outline-none transition hover:border-foreground focus-visible:border-foreground"
-                            >
-                              {translate(locale, copy.openLabel)}
-                              <span aria-hidden="true">↗</span>
-                            </a>
-                          ) : null}
-                          {publication.downloadUrl ? (
-                            <a
-                              href={publication.downloadUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-2 border-b border-foreground/35 pb-0.5 outline-none transition hover:border-foreground focus-visible:border-foreground"
-                            >
-                              {translate(locale, copy.downloadLabel)}
-                              <span aria-hidden="true">↓</span>
-                            </a>
-                          ) : null}
+                          <div className="flex flex-wrap gap-x-5 gap-y-2">
+                            {relatedProject ? (
+                              <Link
+                                href={`/proyectos/${relatedProject.slug}`}
+                                className="inline-flex items-center gap-2 border-b border-foreground/35 pb-0.5 outline-none transition hover:border-foreground focus-visible:border-foreground"
+                              >
+                                {locale === "es" ? "Ver proyecto" : "View project"}
+                                <span aria-hidden="true">↗</span>
+                              </Link>
+                            ) : null}
+                            {publication.url ? (
+                              <a
+                                href={publication.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 border-b border-foreground/35 pb-0.5 outline-none transition hover:border-foreground focus-visible:border-foreground"
+                              >
+                                {translate(locale, copy.openLabel)}
+                                <span aria-hidden="true">↗</span>
+                              </a>
+                            ) : null}
+                            {publication.downloadUrl ? (
+                              <a
+                                href={publication.downloadUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 border-b border-foreground/35 pb-0.5 outline-none transition hover:border-foreground focus-visible:border-foreground"
+                              >
+                                {documentLabel}
+                                <span aria-hidden="true">↗</span>
+                              </a>
+                            ) : null}
+                          </div>
                         </div>
                       )}
                     </div>

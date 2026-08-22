@@ -1900,7 +1900,7 @@ const SiteContentManager = ({
               onChange={(value) => setDraft({ ...draft, publicationsPage: { ...draft.publicationsPage, openLabel: value } })}
             />
             <PlainLocaleInputs
-              label="Etiqueta descargar"
+              label="Etiqueta ver documento"
               value={draft.publicationsPage.downloadLabel}
               onChange={(value) => setDraft({ ...draft, publicationsPage: { ...draft.publicationsPage, downloadLabel: value } })}
             />
