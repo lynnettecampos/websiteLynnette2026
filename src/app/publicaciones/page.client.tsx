@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
+import { ArrowUpRightIcon } from "@/components/site/icons";
 import { useLocale } from "@/components/site/locale-context";
 import type { Publication, PublicationType } from "@/domain/artist";
 import type { Project } from "@/domain/projects";
@@ -173,7 +174,7 @@ export default function PublicationsPageClient({
                                 className="inline-flex items-center gap-2 border-b border-foreground/35 pb-0.5 outline-none transition hover:border-foreground focus-visible:border-foreground"
                               >
                                 {locale === "es" ? "Ver proyecto" : "View project"}
-                                <span aria-hidden="true">↗</span>
+                                <ArrowUpRightIcon />
                               </Link>
                             ) : null}
                             {publication.url ? (
@@ -184,7 +185,7 @@ export default function PublicationsPageClient({
                                 className="inline-flex items-center gap-2 border-b border-foreground/35 pb-0.5 outline-none transition hover:border-foreground focus-visible:border-foreground"
                               >
                                 {translate(locale, copy.openLabel)}
-                                <span aria-hidden="true">↗</span>
+                                <ArrowUpRightIcon />
                               </a>
                             ) : null}
                             {publication.downloadUrl ? (
@@ -195,7 +196,7 @@ export default function PublicationsPageClient({
                                 className="inline-flex items-center gap-2 border-b border-foreground/35 pb-0.5 outline-none transition hover:border-foreground focus-visible:border-foreground"
                               >
                                 {documentLabel}
-                                <span aria-hidden="true">↗</span>
+                                <ArrowUpRightIcon />
                               </a>
                             ) : null}
                           </div>

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 
+import { ArrowUpRightIcon } from "@/components/site/icons";
 import { useLocale } from "@/components/site/locale-context";
 import type { ArtistProfile } from "@/domain/artist";
 import type { SiteContent } from "@/domain/site";
@@ -142,7 +143,7 @@ export default function BioPageClient({ profile, copy }: BioPageClientProps) {
                 >
                   {translate(locale, copy.cvLabel)}
                   <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">
-                    ↗
+                    <ArrowUpRightIcon />
                   </span>
                 </a>
               ) : null}

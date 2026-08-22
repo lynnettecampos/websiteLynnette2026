@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import type { ProjectMenuItem } from "@/components/projects/project-menu";
+import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon } from "@/components/site/icons";
 import { useLocale } from "@/components/site/locale-context";
 import type {
   LocalizedValue,
@@ -107,7 +108,7 @@ const renderTextWithLinks = (value: string) => {
           rel="noopener noreferrer"
           className="border-b border-current/40 outline-none transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:border-[var(--accent)] focus-visible:text-[var(--accent)]"
         >
-          {linkText} ↗
+          {linkText} <ArrowUpRightIcon />
         </a>
         {trailingPunctuation}
       </span>
@@ -357,7 +358,7 @@ export function ProjectDetail({ project, categoryLabels, navigation }: ProjectDe
               rel="noreferrer"
               className="border-b border-foreground/40 font-mono text-[10px] uppercase tracking-[0.08em] outline-none transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:border-[var(--accent)] focus-visible:text-[var(--accent)] sm:text-xs"
             >
-              {translate(locale, LABELS.watchOn)} {videoProvider} ↗
+              {translate(locale, LABELS.watchOn)} {videoProvider} <ArrowUpRightIcon />
             </a>
           </div>
           <div className="relative aspect-video w-full overflow-hidden bg-black text-white">
@@ -415,7 +416,7 @@ export function ProjectDetail({ project, categoryLabels, navigation }: ProjectDe
                       rel="noreferrer"
                       className="border-b border-foreground/40 text-lg outline-none transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:border-[var(--accent)] focus-visible:text-[var(--accent)]"
                     >
-                      {entity.name} ↗
+                      {entity.name} <ArrowUpRightIcon />
                       <span className="sr-only"> — {translate(locale, LABELS.visit)}</span>
                     </a>
                   ) : (
@@ -444,8 +445,8 @@ export function ProjectDetail({ project, categoryLabels, navigation }: ProjectDe
               href={`/proyectos/${navigation.previous.slug}`}
               className="group border-b border-foreground/25 py-6 outline-none transition-colors hover:text-[var(--accent)] focus-visible:text-[var(--accent)] sm:border-b-0 sm:border-r sm:pr-8"
             >
-              <span className="mb-3 block font-mono text-[10px] uppercase tracking-[0.12em] text-foreground/60 group-hover:text-current group-focus-visible:text-current">
-                ← {translate(locale, LABELS.previous)}
+              <span className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-foreground/60 group-hover:text-current group-focus-visible:text-current">
+                <ArrowLeftIcon /> {translate(locale, LABELS.previous)}
               </span>
               <span className="block text-xl leading-tight tracking-[-0.025em] sm:text-2xl">
                 {translate(locale, navigation.previous.label)}
@@ -459,8 +460,8 @@ export function ProjectDetail({ project, categoryLabels, navigation }: ProjectDe
               href={`/proyectos/${navigation.next.slug}`}
               className="group py-6 text-left outline-none transition-colors hover:text-[var(--accent)] focus-visible:text-[var(--accent)] sm:pl-8 sm:text-right"
             >
-              <span className="mb-3 block font-mono text-[10px] uppercase tracking-[0.12em] text-foreground/60 group-hover:text-current group-focus-visible:text-current">
-                {translate(locale, LABELS.next)} →
+              <span className="mb-3 flex items-center justify-end gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-foreground/60 group-hover:text-current group-focus-visible:text-current">
+                {translate(locale, LABELS.next)} <ArrowRightIcon />
               </span>
               <span className="block text-xl leading-tight tracking-[-0.025em] sm:text-2xl">
                 {translate(locale, navigation.next.label)}

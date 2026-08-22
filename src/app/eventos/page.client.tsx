@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { ArrowUpRightIcon } from "@/components/site/icons";
 import { useLocale } from "@/components/site/locale-context";
 import type { ArtistEvent, ArtistEventType } from "@/domain/artist";
 import type { Project } from "@/domain/projects";
@@ -99,13 +100,13 @@ function EventActions({
         {relatedProject ? (
           <Link href={`/proyectos/${relatedProject.slug}`} className={linkClassName}>
             {locale === "es" ? "Ver proyecto" : "View project"}
-            <span aria-hidden="true">↗</span>
+            <ArrowUpRightIcon />
           </Link>
         ) : null}
         {event.url ? (
           <a href={event.url} target="_blank" rel="noreferrer" className={linkClassName}>
             {detailsLabel}
-            <span aria-hidden="true">↗</span>
+            <ArrowUpRightIcon />
           </a>
         ) : null}
       </div>

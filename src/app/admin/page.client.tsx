@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { ArrowUpRightIcon } from "@/components/site/icons";
 import type { Client, ClientKind } from "@/content/clients";
 import type { Service } from "@/content/services";
 import type { ArtistEvent, ArtistProfile, Publication } from "@/domain/artist";
@@ -4785,7 +4786,7 @@ const AdminDashboard = ({
                 rel="noreferrer"
                 className="inline-flex min-h-11 items-center border border-foreground/20 px-4 text-xs font-semibold uppercase tracking-[0.12em] transition hover:border-foreground"
               >
-                Ver Home ↗
+                Ver Home <ArrowUpRightIcon className="ml-2" />
               </a>
               <button
                 type="button"

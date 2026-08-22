@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { ArrowUpRightIcon } from "@/components/site/icons";
 import { getPlainText } from "@/components/site/rich-text";
 import type { SiteContent } from "@/domain/site";
 import { translate } from "@/lib/i18n";
@@ -51,7 +52,7 @@ export function Footer({ footer, artistName }: FooterProps) {
             {socialLinks.map((link) => (
               <a key={link.href} href={link.href} target="_blank" rel="noreferrer">
                 {link.label}
-                <span aria-hidden="true">↗</span>
+                <span aria-hidden="true"><ArrowUpRightIcon /></span>
               </a>
             ))}
           </nav>

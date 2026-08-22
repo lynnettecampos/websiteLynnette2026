@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import type { CloudinaryPickerOptions } from "@/components/cloudinary/picker";
+import { ArrowDownIcon, ArrowUpIcon } from "@/components/site/icons";
 import type {
   ArtistEvent,
   ArtistEventType,
@@ -326,7 +327,7 @@ function LocalizedListEditor({
                   aria-label={`Subir párrafo ${index + 1}`}
                   className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg border border-foreground/10 text-foreground/60 hover:border-foreground/30 hover:text-foreground disabled:opacity-30"
                 >
-                  ↑
+                  <ArrowUpIcon />
                 </button>
                 <button
                   type="button"
@@ -335,7 +336,7 @@ function LocalizedListEditor({
                   aria-label={`Bajar párrafo ${index + 1}`}
                   className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg border border-foreground/10 text-foreground/60 hover:border-foreground/30 hover:text-foreground disabled:opacity-30"
                 >
-                  ↓
+                  <ArrowDownIcon />
                 </button>
                 <button
                   type="button"

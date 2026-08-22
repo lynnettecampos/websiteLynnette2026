@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
+import { ArrowRightIcon, ArrowUpRightIcon, CheckIcon } from "@/components/site/icons";
 import { useLocale } from "@/components/site/locale-context";
 import { getPlainText, RichText } from "@/components/site/rich-text";
 import type { SiteContent } from "@/domain/site";
@@ -123,7 +124,7 @@ export default function ContactPageClient({
                     className="inline-flex items-center gap-2 border-b border-transparent pb-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-foreground/60 outline-none transition hover:border-foreground/50 hover:text-foreground focus-visible:border-foreground focus-visible:text-foreground"
                   >
                     {getPlainText(translate(locale, socialLink.label))}
-                    <span aria-hidden="true">↗</span>
+                    <ArrowUpRightIcon />
                   </a>
                 </li>
               ))}
@@ -257,14 +258,14 @@ export default function ContactPageClient({
                 <RichText as="span" value={copy.submitLabel} />
               )}
               <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">
-                →
+                <ArrowRightIcon />
               </span>
             </button>
 
             <div aria-live="polite" className="min-h-5 text-sm">
               {status === "success" ? (
                 <p className="font-mono text-[10px] uppercase tracking-[0.15em]">
-                  <RichText as="span" value={copy.successLabel} /> · ✓
+                  <RichText as="span" value={copy.successLabel} /> · <CheckIcon />
                 </p>
               ) : null}
               {error ? <p role="alert" className="text-red-500">{error}</p> : null}

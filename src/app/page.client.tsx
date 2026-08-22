@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { useLocale } from "@/components/site/locale-context";
+import { ArrowUpRightIcon, AsteriskIcon } from "@/components/site/icons";
 import {
   resolveProjectHomeColor,
   type ProjectGalleryImage,
@@ -369,7 +370,7 @@ export default function HomePageClient({
             <div className={styles.previewCopy}>
               <p>{translate(locale, activeProject.label)}</p>
               <p>
-                {activeProject.timeline} <span aria-hidden="true">↗</span>
+                {activeProject.timeline} <ArrowUpRightIcon />
               </p>
             </div>
           </aside>
@@ -388,7 +389,7 @@ export default function HomePageClient({
         className={styles.bioPortal}
         aria-label={translate(locale, UI_COPY.bioLabel)}
       >
-        <span aria-hidden="true">✳</span>
+        <span aria-hidden="true"><AsteriskIcon /></span>
       </Link>
     </section>
   );
