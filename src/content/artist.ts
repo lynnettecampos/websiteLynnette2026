@@ -7,8 +7,18 @@ export const ARTIST_PROFILE: ArtistProfile = {
   role: { es: "Artista", en: "Artist" },
   introduction: { es: "", en: "" },
   biography: [],
-  statementTitle: { es: "Práctica", en: "Practice" },
-  statement: [],
+  statementTitle: { es: "STATEMENT", en: "STATEMENT" },
+  statement: [
+    {
+      es: "Mi trabajo hace referencia constante a los primeros contactos que tuve con la ilustración gráfica. Allí afirmé mi gusto por la expansión del texto hacia su representación visual, partiendo de ahí para crear nuevas obras. En mi proceso creativo, constantemente recurro a recuerdos y permito que estos me guíen en la construcción de nuevas ideas, vinculándolos a intereses actuales para posteriormente configurar nuevas obras. Mi proceso se nutre de explorar la sencillez de los materiales y estrategias analogas, que al integrarse con medios digitales expanden y modifican los significados y posibilidades. Me interesa especialmente trabajar desde lo sensible, el cuidado y el cruce entre cuerpo, tecnologia, memoria y paisaje.",
+      en: "Mi trabajo hace referencia constante a los primeros contactos que tuve con la ilustración gráfica. Allí afirmé mi gusto por la expansión del texto hacia su representación visual, partiendo de ahí para crear nuevas obras. En mi proceso creativo, constantemente recurro a recuerdos y permito que estos me guíen en la construcción de nuevas ideas, vinculándolos a intereses actuales para posteriormente configurar nuevas obras. Mi proceso se nutre de explorar la sencillez de los materiales y estrategias analogas, que al integrarse con medios digitales expanden y modifican los significados y posibilidades. Me interesa especialmente trabajar desde lo sensible, el cuidado y el cruce entre cuerpo, tecnologia, memoria y paisaje.",
+    },
+  ],
+  portrait: {
+    src: "https://res.cloudinary.com/dmrzmnjln/image/upload/v1787281855/projects/nuevo/cover/osl3tl0yk8njlzj6wxl7.png",
+    alt: { es: "LC", en: "LC" },
+    footnote: { es: "LC", en: "LC" },
+  },
 };
 
 // These collections intentionally start empty. They are the local-content fallback

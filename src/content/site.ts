@@ -8,8 +8,8 @@ export const DEFAULT_SITE_CONTENT: SiteCopy = {
     bioLabel: { es: "Bio", en: "Bio" },
     servicesLabel: { es: "Servicios", en: "Services" },
     clientsLabel: { es: "Clientes", en: "Clients" },
-    projectsLabel: { es: "Proyectos", en: "Projects" },
-    eventsLabel: { es: "Eventos", en: "Events" },
+    projectsLabel: { es: "PROYECTOS", en: "PROJECTS" },
+    eventsLabel: { es: "Exhibiciones", en: "Exhibitions" },
     publicationsLabel: { es: "Publicaciones", en: "Publications" },
     contactLabel: { es: "Contacto", en: "Contact" },
     openMenuLabel: { es: "Abrir menú", en: "Open menu" },
@@ -102,7 +102,7 @@ export const DEFAULT_SITE_CONTENT: SiteCopy = {
     ],
   },
   projectsPage: {
-    title: { es: "Proyectos", en: "Projects" },
+    title: { es: "Proyectos / Obra", en: "Projects / Artwork" },
     copy: {
       es: "Archivo de obras, procesos y colaboraciones artísticas.",
       en: "An archive of artworks, processes, and artistic collaborations.",
@@ -123,13 +123,13 @@ export const DEFAULT_SITE_CONTENT: SiteCopy = {
   bioPage: {
     title: { es: "Bio", en: "Bio" },
     pending: {
-      es: "La biografía y el statement de la artista se publicarán próximamente.",
-      en: "The artist biography and statement will be published soon.",
+      es: "Mi trabajo hace referencia constante a los primeros contactos que tuve con la ilustración gráfica. Allí afirmé mi gusto por la expansión del texto hacia su representación visual, partiendo de ahí para crear nuevas obras.",
+      en: "Mi trabajo hace referencia constante a los primeros contactos que tuve con la ilustración gráfica. Allí afirmé mi gusto por la expansión del texto hacia su representación visual, partiendo de ahí para crear nuevas obras.",
     },
     cvLabel: { es: "Descargar CV", en: "Download CV" },
   },
   eventsPage: {
-    title: { es: "Eventos", en: "Events" },
+    title: { es: "Exhibiciones", en: "Exhibitions" },
     introduction: {
       es: "Exposiciones, charlas, performances y otras presentaciones públicas.",
       en: "Exhibitions, talks, performances, and other public presentations.",
@@ -178,7 +178,7 @@ export const DEFAULT_SITE_CONTENT: SiteCopy = {
       es: "Para invitaciones, exposiciones, publicaciones y colaboraciones, puedes escribir mediante este formulario.",
       en: "For invitations, exhibitions, publications, and collaborations, use this form to get in touch.",
     },
-    email: "hola@monkmonkeykey.com",
+    email: "lynnettecoraje@gmail.com",
     preparation: [
       { es: "Contexto del producto y objetivos de negocio.", en: "Product context and business goals." },
       { es: "Estado actual del equipo y métricas disponibles.", en: "Current team setup and available metrics." },
