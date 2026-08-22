@@ -1,0 +1,36 @@
+<svg width="720" height="480" viewBox="0 0 720 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="720" height="480" rx="40" fill="url(#paint0_linear)" />
+  <g filter="url(#filter0_f)">
+    <ellipse cx="180" cy="140" rx="140" ry="120" fill="#F472B6" fill-opacity="0.35" />
+  </g>
+  <g filter="url(#filter1_f)">
+    <ellipse cx="560" cy="340" rx="160" ry="140" fill="#38BDF8" fill-opacity="0.3" />
+  </g>
+  <g opacity="0.85">
+    <circle cx="204" cy="168" r="44" fill="white" />
+    <circle cx="204" cy="168" r="18" fill="#1E293B" fill-opacity="0.2" />
+    <circle cx="360" cy="120" r="36" fill="white" />
+    <circle cx="360" cy="120" r="14" fill="#1E293B" fill-opacity="0.2" />
+    <circle cx="508" cy="196" r="40" fill="white" />
+    <circle cx="508" cy="196" r="16" fill="#1E293B" fill-opacity="0.2" />
+    <circle cx="268" cy="320" r="36" fill="white" />
+    <circle cx="268" cy="320" r="14" fill="#1E293B" fill-opacity="0.2" />
+    <circle cx="424" cy="304" r="44" fill="white" />
+    <circle cx="424" cy="304" r="18" fill="#1E293B" fill-opacity="0.2" />
+    <circle cx="588" cy="132" r="32" fill="white" />
+    <circle cx="588" cy="132" r="12" fill="#1E293B" fill-opacity="0.2" />
+  </g>
+  <path d="M204 168L360 120L508 196L424 304L268 320L204 168Z" stroke="#0F172A" stroke-opacity="0.12" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+  <defs>
+    <filter id="filter0_f" x="-20" y="-40" width="400" height="360" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="60" />
+    </filter>
+    <filter id="filter1_f" x="300" y="100" width="520" height="480" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="60" />
+    </filter>
+    <linearGradient id="paint0_linear" x1="64" y1="32" x2="656" y2="448" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF1F2" />
+      <stop offset="1" stop-color="#DBEAFE" />
+    </linearGradient>
+  </defs>
+</svg>

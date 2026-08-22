@@ -1,0 +1,500 @@
+.home,
+.emptyHome {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  background: #050505;
+  color: #f5f3ec;
+}
+
+.home {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: clamp(1.1rem, 2.4vw, 2.4rem) var(--page-gutter) clamp(1.15rem, 2.2vw, 2rem);
+}
+
+.intro {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.workCount,
+.help,
+.previewCopy {
+  font-family: var(--font-mono);
+}
+
+.artistName,
+.emptyArtistName {
+  margin: 0;
+  font-size: clamp(1.55rem, 3.2vw, 3.15rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+}
+
+.workCount {
+  margin: 0;
+  color: #a7a59f;
+  font-size: clamp(0.58rem, 0.75vw, 0.72rem);
+  letter-spacing: 0.08em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.workCount span {
+  color: #f5f3ec;
+}
+
+.desktopWordIndex {
+  display: grid;
+  width: min(46rem, 58vw);
+  justify-items: end;
+  gap: 0.55rem;
+}
+
+.desktopWordIndex .workCount {
+  min-height: auto;
+  cursor: default;
+}
+
+.searchWords {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.28rem 1.1rem;
+  margin: 0;
+  padding: 0;
+  color: #d0cec8;
+  font-family: var(--font-mono);
+  font-size: clamp(0.62rem, 0.82vw, 0.78rem);
+  letter-spacing: 0.045em;
+  line-height: 1.45;
+  list-style: none;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.mobileProjectIndex {
+  position: relative;
+  z-index: 10;
+  display: none;
+}
+
+.workCount {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.38rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.workCount::-webkit-details-marker {
+  display: none;
+}
+
+.workCount b {
+  display: inline-block;
+  margin-left: 0.28rem;
+  color: #5d82ff;
+  font-size: 0.8rem;
+  font-weight: 400;
+  transition: transform 160ms ease;
+}
+
+.mobileProjectIndex[open] .workCount b {
+  transform: rotate(45deg);
+}
+
+.indexPanel {
+  position: absolute;
+  z-index: 12;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  width: min(34rem, calc(100vw - var(--page-gutter) - var(--page-gutter)));
+  max-height: min(66svh, 36rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(245, 243, 236, 0.42);
+  background: #0c0c0c;
+}
+
+.indexPanel ol {
+  margin: 0;
+  padding: 0.5rem 0;
+  list-style: none;
+}
+
+.indexPanel li + li {
+  border-top: 1px solid rgba(245, 243, 236, 0.16);
+}
+
+.indexPanel a {
+  display: grid;
+  min-height: 2.75rem;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.8rem;
+  color: #d0cec8;
+  font-family: var(--font-mono);
+  font-size: clamp(0.68rem, 0.9vw, 0.82rem);
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.indexPanel a > span:first-child,
+.indexPanel time {
+  color: #77756f;
+  font-size: 0.62rem;
+}
+
+.indexPanel a:hover,
+.indexPanel a:focus-visible {
+  color: var(--word-color);
+}
+
+.stage {
+  position: relative;
+  display: grid;
+  min-height: 0;
+  place-items: center;
+}
+
+.puzzle {
+  position: relative;
+  width: min(76vmin, 47rem);
+  aspect-ratio: 1;
+  max-width: 100%;
+}
+
+.grid {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  grid-template-columns: repeat(var(--word-search-size), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--word-search-size), minmax(0, 1fr));
+}
+
+.cell {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  color: #f5f3ec;
+  font-family: var(--font-sans);
+  font-size: var(--word-search-font-size);
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.48;
+  transform: scale(1);
+  transition: color 220ms ease, opacity 220ms ease, transform 220ms ease;
+}
+
+.highlightedCell {
+  color: var(--word-color);
+  opacity: 1;
+  transform: scale(1.22);
+}
+
+.idleHighlightedCell {
+  animation: idle-word-reveal 820ms ease-in-out both;
+}
+
+.wordLinks {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+}
+
+.wordLink {
+  position: absolute;
+  display: block;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.wordLink:focus-visible {
+  border: 1px solid currentColor;
+  outline: 1px solid #f5f3ec;
+  outline-offset: 2px;
+}
+
+.preview {
+  position: absolute;
+  z-index: 6;
+  right: 0;
+  bottom: clamp(0.5rem, 2vw, 2rem);
+  width: clamp(9rem, 14vw, 13rem);
+  border: 1px solid color-mix(in srgb, var(--word-color) 72%, #f5f3ec);
+  background: #050505;
+  pointer-events: none;
+}
+
+.previewMedia {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-bottom: 1px solid color-mix(in srgb, var(--word-color) 72%, #f5f3ec);
+  background: #141414;
+}
+
+.previewImage {
+  object-fit: cover;
+  filter: saturate(0.88) contrast(1.04);
+}
+
+.previewCopy {
+  padding: 0.65rem 0.7rem 0.72rem;
+  font-size: clamp(0.56rem, 0.7vw, 0.68rem);
+  line-height: 1.35;
+}
+
+.previewCopy p {
+  margin: 0;
+}
+
+.previewCopy p:first-child {
+  color: var(--word-color);
+}
+
+.previewCopy p:last-child {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  color: #a7a59f;
+}
+
+.help {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-right: 3.7rem;
+  color: #8f8d87;
+  font-size: clamp(0.54rem, 0.68vw, 0.66rem);
+  letter-spacing: 0.035em;
+  line-height: 1.45;
+}
+
+.help p {
+  max-width: 34rem;
+  margin: 0;
+}
+
+.help p:last-child {
+  text-align: right;
+}
+
+.revealed {
+  color: #f5f3ec;
+}
+
+.bioPortal {
+  position: absolute;
+  z-index: 8;
+  right: var(--page-gutter);
+  bottom: clamp(1rem, 2vw, 1.8rem);
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 1px solid rgba(245, 243, 236, 0.65);
+  color: #f5f3ec;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+
+.bioPortal span {
+  display: block;
+  animation: portal-turn 12s linear infinite;
+}
+
+.bioPortal:hover {
+  border-color: #5d82ff;
+  color: #5d82ff;
+}
+
+.emptyHome {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1.1rem, 2.4vw, 2.4rem) var(--page-gutter) clamp(1.5rem, 3vw, 3rem);
+}
+
+.emptyMessage {
+  max-width: 36rem;
+  font-size: clamp(1.2rem, 3.2vw, 3rem);
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+}
+
+.emptyMessage p {
+  margin: 0;
+}
+
+.emptyMessage p:last-child {
+  margin-top: 0.8rem;
+  color: #8f8d87;
+  font-family: var(--font-mono);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+
+@keyframes portal-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes idle-word-reveal {
+  0% {
+    color: #f5f3ec;
+    opacity: 0.48;
+    transform: scale(1);
+  }
+
+  50% {
+    color: color-mix(in srgb, var(--word-color) 50%, #f5f3ec);
+    opacity: 0.74;
+    transform: scale(1);
+  }
+
+  100% {
+    color: var(--word-color);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 639px) {
+  .home {
+    padding: 0.9rem 0.75rem 0.85rem;
+  }
+
+  .intro {
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .desktopWordIndex {
+    display: none;
+  }
+
+  .mobileProjectIndex {
+    display: block;
+  }
+
+  .artistName {
+    font-size: clamp(1.35rem, 7vw, 2rem);
+  }
+
+  .workCount {
+    max-width: 7rem;
+    line-height: 1.35;
+  }
+
+  .indexPanel {
+    width: calc(100vw - 1.5rem);
+  }
+
+  .indexPanel a {
+    grid-template-columns: 1.65rem minmax(0, 1fr);
+    gap: 0.45rem;
+  }
+
+  .indexPanel time {
+    grid-column: 2;
+    margin-top: -0.25rem;
+  }
+
+  .puzzle {
+    width: min(91vw, 66svh);
+  }
+
+  .preview {
+    right: 0.1rem;
+    bottom: 0.25rem;
+    width: min(9.5rem, 42vw);
+  }
+
+  .previewMedia {
+    display: none;
+  }
+
+  .help {
+    display: block;
+    padding-right: 3.4rem;
+    font-size: 0.55rem;
+  }
+
+  .help p:first-child {
+    display: none;
+  }
+
+  .help p:last-child {
+    text-align: left;
+  }
+
+  .bioPortal {
+    right: 0.75rem;
+    bottom: 0.7rem;
+  }
+}
+
+@media (max-width: 379px) {
+  .workCount {
+    font-size: 0;
+  }
+
+  .workCount span {
+    font-size: 0.58rem;
+  }
+
+  .workCount b {
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+  .home {
+    padding-block: 0.65rem;
+  }
+
+  .artistName {
+    font-size: 1.3rem;
+  }
+
+  .puzzle {
+    width: min(68vmin, 34rem);
+  }
+
+  .preview {
+    bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell {
+    transition: none;
+  }
+
+  .idleHighlightedCell {
+    animation: none;
+  }
+
+  .bioPortal span {
+    animation: none;
+  }
+}
