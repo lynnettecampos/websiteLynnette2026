@@ -13,14 +13,14 @@ import type {
 import { normalizeProjectHomeColor } from "@/domain/projects";
 import type { Client } from "@/content/clients";
 import { PROJECTS } from "@/content/projects";
-import { getClients } from "@/data/clients";
+import { getClientsFromDatabase } from "@/data/clients";
 import type { LocaleText } from "@/lib/i18n";
 import { buildCloudinaryImageUrl } from "@/server/cloudinary";
 import {
   ensureContentCollectionInitialized,
   isContentCollectionInitialized,
 } from "@/server/content-bootstrap";
-import { getMongoDatabase } from "@/server/mongodb";
+import { getMongoDatabase, requireMongoDatabase } from "@/server/mongodb";
 
 const PROJECTS_COLLECTION = "projects";
 const PROJECTS_INITIALIZATION_KEY = "projects:v1";
@@ -277,13 +277,17 @@ const normalizeVideo = (
   };
 };
 
-const buildEntities = async (slugs: string[] | undefined): Promise<ProjectEntity[]> => {
+const buildEntities = async (
+  slugs: string[] | undefined,
+  knownClients?: Map<string, Client>,
+): Promise<ProjectEntity[]> => {
   if (!slugs || slugs.length === 0) {
     return [];
   }
 
-  const clients = await getClients();
-  const clientMap = new Map<string, Client>(clients.map((client) => [client.slug, client]));
+  const clientMap =
+    knownClients ??
+    new Map((await getClientsFromDatabase(false)).map((client) => [client.slug, client]));
 
   return slugs
     .map((slug) => {
@@ -305,7 +309,10 @@ const buildEntities = async (slugs: string[] | undefined): Promise<ProjectEntity
     .filter(Boolean) as ProjectEntity[];
 };
 
-const normalizeProjectDocument = async (document: ProjectDocument): Promise<Project> => {
+const normalizeProjectDocument = async (
+  document: ProjectDocument,
+  knownClients?: Map<string, Client>,
+): Promise<Project> => {
   const cover = normalizeImage(document.cover);
 
   if (!cover) {
@@ -317,7 +324,7 @@ const normalizeProjectDocument = async (document: ProjectDocument): Promise<Proj
     : [];
 
   const video = normalizeVideo(document.video ?? undefined, document.slug);
-  const entities = await buildEntities(document.entities);
+  const entities = await buildEntities(document.entities, knownClients);
 
   return {
     slug: document.slug,
@@ -355,12 +362,8 @@ const normalizeProjectDocument = async (document: ProjectDocument): Promise<Proj
   } satisfies Project;
 };
 
-export const fetchProjectsFromDatabase = async (): Promise<Project[] | null> => {
-  const db = await getMongoDatabase();
-
-  if (!db) {
-    return null;
-  }
+export const fetchProjectsFromDatabase = async (): Promise<Project[]> => {
+  const db = await requireMongoDatabase();
 
   const collection = db.collection<ProjectDocument>(PROJECTS_COLLECTION);
 
@@ -369,21 +372,17 @@ export const fetchProjectsFromDatabase = async (): Promise<Project[] | null> => 
     .sort({ order: 1, "name.es": 1 })
     .toArray();
 
-  const results: Project[] = [];
+  const needsClients = documents.some((document) => (document.entities?.length ?? 0) > 0);
+  const clients = needsClients ? await getClientsFromDatabase(false) : [];
+  const clientsBySlug = new Map(clients.map((client) => [client.slug, client]));
 
-  for (const document of documents) {
-    results.push(await normalizeProjectDocument(document));
-  }
-
-  return results;
+  return Promise.all(
+    documents.map((document) => normalizeProjectDocument(document, clientsBySlug)),
+  );
 };
 
 export const fetchProjectBySlug = async (slug: string): Promise<Project | null> => {
-  const db = await getMongoDatabase();
-
-  if (!db) {
-    return null;
-  }
+  const db = await requireMongoDatabase();
 
   const collection = db.collection<ProjectDocument>(PROJECTS_COLLECTION);
 
@@ -490,9 +489,9 @@ const ensureProjectsInitialized = async (db: Awaited<ReturnType<typeof getMongoD
   });
 };
 
-export const isProjectsCollectionInitialized = async (): Promise<boolean | null> => {
-  const db = await getMongoDatabase();
-  return db ? isContentCollectionInitialized(db, PROJECTS_INITIALIZATION_KEY) : null;
+export const isProjectsCollectionInitialized = async (): Promise<boolean> => {
+  const db = await requireMongoDatabase();
+  return isContentCollectionInitialized(db, PROJECTS_INITIALIZATION_KEY);
 };
 
 export const upsertProject = async (payload: ProjectPayload): Promise<Project | null> => {

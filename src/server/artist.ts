@@ -1,5 +1,5 @@
 import type { ArtistEvent, ArtistProfile, Publication } from "@/domain/artist";
-import { getMongoDatabase } from "@/server/mongodb";
+import { getMongoDatabase, requireMongoDatabase } from "@/server/mongodb";
 
 const PROFILE_COLLECTION = "artistProfile";
 const PROFILE_ID = "global";
@@ -11,8 +11,7 @@ type StoredEvent = ArtistEvent & { createdAt?: Date; updatedAt?: Date };
 type StoredPublication = Publication & { createdAt?: Date; updatedAt?: Date };
 
 export const fetchArtistProfile = async (): Promise<ArtistProfile | null> => {
-  const db = await getMongoDatabase();
-  if (!db) return null;
+  const db = await requireMongoDatabase();
   const document = await db.collection<StoredProfile>(PROFILE_COLLECTION).findOne({ _id: PROFILE_ID });
   if (!document) return null;
   return {
@@ -55,9 +54,8 @@ export const upsertArtistProfile = async (profile: ArtistProfile): Promise<Artis
   return fetchArtistProfile();
 };
 
-export const fetchArtistEvents = async (): Promise<ArtistEvent[] | null> => {
-  const db = await getMongoDatabase();
-  if (!db) return null;
+export const fetchArtistEvents = async (): Promise<ArtistEvent[]> => {
+  const db = await requireMongoDatabase();
   const documents = await db.collection<StoredEvent>(EVENTS_COLLECTION).find({}, { projection: { _id: 0, createdAt: 0, updatedAt: 0 } }).toArray();
   return documents as ArtistEvent[];
 };
@@ -112,9 +110,8 @@ export const deleteArtistEvent = async (slug: string): Promise<boolean> => {
   return (result.deletedCount ?? 0) > 0;
 };
 
-export const fetchPublications = async (): Promise<Publication[] | null> => {
-  const db = await getMongoDatabase();
-  if (!db) return null;
+export const fetchPublications = async (): Promise<Publication[]> => {
+  const db = await requireMongoDatabase();
   const documents = await db.collection<StoredPublication>(PUBLICATIONS_COLLECTION).find({}, { projection: { _id: 0, createdAt: 0, updatedAt: 0 } }).toArray();
   return documents as Publication[];
 };

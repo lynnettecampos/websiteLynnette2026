@@ -214,6 +214,10 @@ Checklist rápida para Gmail:
   Cuando el servidor detecta este mismo error en tiempo de ejecución intentará automáticamente convertir tu URI `mongodb+srv://` a
   una conexión directa `mongodb://` (forzando `directConnection=true` y `tls=true`). Si el fallback logra conectarse verás un único
   aviso en consola y el panel quedará funcional sin tocar las credenciales.
+- Las lecturas públicas conservan la última respuesta válida de MongoDB. Una falla transitoria no se guarda en la caché como si fuera
+  contenido real: Next.js sirve la copia válida anterior y reintenta la conexión. El contenido Markdown sólo se usa cuando MongoDB no
+  está configurado o cuando una instancia nueva todavía no dispone de ninguna lectura válida.
+- En Vercel, revisa los logs buscando `[MongoDB]` o el nombre del lector (`[projects]`, `[site-content]`, etc.) para distinguir una reconexión de un error de datos.
 - Tras iniciar sesión en `/admin/login`, puedes probar manualmente el endpoint de creación desde la terminal copiando la cookie `mmk_admin_session` del navegador:
   ```bash
   curl -X POST http://localhost:3000/api/clients \

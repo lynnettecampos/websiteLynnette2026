@@ -2,7 +2,7 @@ import { DEFAULT_SITE_CONTENT } from "@/content/site";
 import type { SiteContent, SiteCopy } from "@/domain/site";
 import type { LocaleText } from "@/lib/i18n";
 import { buildCloudinaryVideoUrl } from "@/server/cloudinary";
-import { getMongoDatabase } from "@/server/mongodb";
+import { getMongoDatabase, requireMongoDatabase } from "@/server/mongodb";
 
 const COLLECTION = "siteContent";
 const DOCUMENT_ID = "global";
@@ -281,11 +281,7 @@ const mergeSiteCopy = (payload: Partial<SiteCopy>): SiteCopy => ({
 });
 
 export const fetchSiteContent = async (): Promise<SiteContent | null> => {
-  const db = await getMongoDatabase();
-
-  if (!db) {
-    return null;
-  }
+  const db = await requireMongoDatabase();
 
   const document = await db.collection<SiteContent>(COLLECTION).findOne({ _id: DOCUMENT_ID });
 

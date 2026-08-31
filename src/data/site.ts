@@ -6,6 +6,7 @@ import {
   CONTENT_CACHE_TAGS,
   PUBLIC_CONTENT_REVALIDATE_SECONDS,
 } from "@/lib/content-cache";
+import { createResilientContentReader } from "@/data/resilient-read";
 import { hasDatabaseConfig } from "@/lib/env";
 import { fetchSiteContent } from "@/server/site";
 
@@ -55,23 +56,29 @@ const mergeSiteContent = (fetched: SiteContent | null): SiteContent => {
   };
 };
 
-const getSiteContentUncached = async (): Promise<SiteContent> => {
-  if (!hasDatabaseConfig()) {
-    return DEFAULT_SITE_CONTENT;
-  }
-
+const getSiteContentFromDatabase = async (): Promise<SiteContent> => {
   const site = await fetchSiteContent();
   return mergeSiteContent(site);
 };
 
 const getSiteContentCached = unstable_cache(
-  getSiteContentUncached,
-  ["public-site-content-v1"],
+  getSiteContentFromDatabase,
+  ["public-site-content-v2"],
   {
     revalidate: PUBLIC_CONTENT_REVALIDATE_SECONDS,
     tags: [CONTENT_CACHE_TAGS.site],
   },
 );
 
-export const getSiteContent = async (): Promise<SiteContent> =>
-  getSiteContentCached();
+const readSiteContent = createResilientContentReader(
+  "site-content",
+  () => DEFAULT_SITE_CONTENT,
+);
+
+export const getSiteContent = async (): Promise<SiteContent> => {
+  if (!hasDatabaseConfig()) {
+    return DEFAULT_SITE_CONTENT;
+  }
+
+  return readSiteContent(getSiteContentCached);
+};

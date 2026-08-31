@@ -2,20 +2,12 @@ import type { Client } from "@/content/clients";
 import { CLIENTS } from "@/content/clients";
 import { mergeFallbackRecordsUntilInitialized } from "@/data/content-bootstrap";
 import { hasDatabaseConfig } from "@/lib/env";
+import { createResilientContentReader } from "@/data/resilient-read";
 import {
-  fetchClientBySlug,
   fetchClientsFromDatabase,
   isClientsCollectionInitialized,
 } from "@/server/clients";
 
-let warnedClientFallback = false;
-
-const logClientFallback = (reason: string) => {
-  if (!warnedClientFallback) {
-    console.warn(`[clients] Usando contenido local: ${reason}`);
-    warnedClientFallback = true;
-  }
-};
 
 const filterPrivate = (clients: Client[], includePrivate: boolean) =>
   includePrivate ? clients : clients.filter((client) => !client.isPrivate);
@@ -27,36 +19,37 @@ const sortClients = (clients: Client[]) =>
     return orderDifference || first.name.localeCompare(second.name);
   });
 
-export const getClients = async (includePrivate = false): Promise<Client[]> => {
-  if (!hasDatabaseConfig()) {
-    return filterPrivate(CLIENTS, includePrivate);
-  }
+const getClientsFallback = (includePrivate: boolean): Client[] =>
+  filterPrivate(sortClients(CLIENTS), includePrivate);
 
+export const getClientsFromDatabase = async (includePrivate: boolean): Promise<Client[]> => {
   const [clients, initialized] = await Promise.all([
     fetchClientsFromDatabase(),
     isClientsCollectionInitialized(),
   ]);
 
-  if (!clients || initialized === null) {
-    logClientFallback("no se pudo contactar la base de datos");
-    return filterPrivate(CLIENTS, includePrivate);
-  }
-
   const resolvedClients = mergeFallbackRecordsUntilInitialized(CLIENTS, clients, initialized);
   return filterPrivate(sortClients(resolvedClients), includePrivate);
 };
 
-export const getClientBySlug = async (slug: string): Promise<Client | null> => {
+const readPublicClients = createResilientContentReader("clients", () =>
+  getClientsFallback(false),
+);
+const readAllClients = createResilientContentReader("clients:admin", () =>
+  getClientsFallback(true),
+);
+
+export const getClients = async (includePrivate = false): Promise<Client[]> => {
   if (!hasDatabaseConfig()) {
-    return CLIENTS.find((client) => client.slug === slug) ?? null;
+    return getClientsFallback(includePrivate);
   }
 
-  const client = await fetchClientBySlug(slug);
+  return includePrivate
+    ? readAllClients(() => getClientsFromDatabase(true))
+    : readPublicClients(() => getClientsFromDatabase(false));
+};
 
-  if (client) {
-    return client;
-  }
-
+export const getClientBySlug = async (slug: string): Promise<Client | null> => {
   const clients = await getClients();
   return clients.find((item) => item.slug === slug) ?? null;
 };
@@ -66,8 +59,5 @@ export const refreshClientsCache = async (): Promise<void> => {
     return;
   }
 
-  const clients = await fetchClientsFromDatabase();
-  if (!clients) {
-    logClientFallback("no se pudo contactar la base de datos");
-  }
+  await readAllClients(() => getClientsFromDatabase(true));
 };

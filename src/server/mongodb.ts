@@ -15,6 +15,7 @@ export type MongoCollection<T> = {
   ): Promise<unknown>;
   deleteOne(filter: Record<string, unknown>): Promise<{ deletedCount?: number }>;
   createIndex(keys: Record<string, number>, options?: Record<string, unknown>): Promise<unknown>;
+  countDocuments(query?: Record<string, unknown>): Promise<number>;
 };
 
 export type MongoDatabase = {
@@ -23,6 +24,7 @@ export type MongoDatabase = {
 
 type MongoClientInstance = {
   connect(): Promise<MongoClientInstance>;
+  close(): Promise<void>;
   db(name?: string): MongoDatabase;
 };
 
@@ -39,8 +41,14 @@ let activeMongoUri: string | null = null;
 let parsedDatabaseName: string | null | undefined;
 let mongoRetryAfter = 0;
 
-const MONGO_RETRY_COOLDOWN_MS = 60_000;
-const MONGO_SERVER_SELECTION_TIMEOUT_MS = 2_000;
+const MONGO_RETRY_COOLDOWN_MS = 5_000;
+const MONGO_SERVER_SELECTION_TIMEOUT_MS = 5_000;
+const MONGO_CONNECT_RETRY_DELAY_MS = 250;
+const MONGO_CONNECT_ATTEMPTS = 2;
+
+export class MongoDatabaseUnavailableError extends Error {
+  readonly name = "MongoDatabaseUnavailableError";
+}
 
 const getDatabaseFromUri = (): string | null => {
   if (parsedDatabaseName !== undefined) {
@@ -94,6 +102,24 @@ const buildSrvFallbackUri = (uri: string): string | null => {
 
 const srvFallbackUri = buildSrvFallbackUri(env.mongodbUri);
 
+const isTransientConnectionError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const normalized = error.message.toLowerCase();
+  return [
+    "server selection",
+    "timed out",
+    "timeout",
+    "querysrv",
+    "enodata",
+    "erefused",
+    "enotfound",
+    "econnreset",
+  ].some((fragment) => normalized.includes(fragment));
+};
+
 const shouldRetryWithSrvFallback = (error: unknown): boolean => {
   if (!(error instanceof Error) || typeof error.message !== "string") {
     return false;
@@ -108,19 +134,54 @@ const shouldRetryWithSrvFallback = (error: unknown): boolean => {
   );
 };
 
+const wait = (milliseconds: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
+
 const connectWithUri = async (mongodb: MongoModule, uri: string): Promise<MongoClientInstance> => {
   const clientInstance = new mongodb.MongoClient(uri, {
     maxPoolSize: 5,
     serverSelectionTimeoutMS: MONGO_SERVER_SELECTION_TIMEOUT_MS,
+    connectTimeoutMS: MONGO_SERVER_SELECTION_TIMEOUT_MS,
+    maxIdleTimeMS: 60_000,
   });
 
   console.info(`[MongoDB] Intentando conectar a ${describeUri(uri)}`);
 
-  const connectedClient = await clientInstance.connect();
-  activeMongoUri = uri;
-  mongoRetryAfter = 0;
-  warnedConnectionFailure = false;
-  return connectedClient;
+  try {
+    const connectedClient = await clientInstance.connect();
+    activeMongoUri = uri;
+    mongoRetryAfter = 0;
+    warnedConnectionFailure = false;
+    console.info(`[MongoDB] Conexión establecida con ${describeUri(uri)}`);
+    return connectedClient;
+  } catch (error) {
+    await clientInstance.close().catch(() => undefined);
+    throw error;
+  }
+};
+
+const connectWithRetry = async (
+  mongodb: MongoModule,
+  uri: string,
+): Promise<MongoClientInstance> => {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= MONGO_CONNECT_ATTEMPTS; attempt += 1) {
+    try {
+      return await connectWithUri(mongodb, uri);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === MONGO_CONNECT_ATTEMPTS || !isTransientConnectionError(error)) {
+        throw error;
+      }
+
+      console.warn(`[MongoDB] Conexión transitoria fallida; reintento ${attempt + 1}.`);
+      await wait(MONGO_CONNECT_RETRY_DELAY_MS);
+    }
+  }
+
+  throw lastError;
 };
 
 const loadMongoModule = async (): Promise<MongoModule | null> => {
@@ -173,7 +234,7 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
 
   if (!mongoClientPromise) {
     const initialUri = activeMongoUri ?? env.mongodbUri;
-    mongoClientPromise = connectWithUri(mongodb, initialUri).catch(async (error) => {
+    mongoClientPromise = connectWithRetry(mongodb, initialUri).catch(async (error) => {
       if (
         srvFallbackUri &&
         initialUri === env.mongodbUri &&
@@ -182,7 +243,7 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
         console.warn(
           "[MongoDB] Error al resolver el registro SRV. Reintentando con conexión directa...",
         );
-        return connectWithUri(mongodb, srvFallbackUri);
+        return connectWithRetry(mongodb, srvFallbackUri);
       }
 
       throw error;
@@ -193,6 +254,7 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
     const client = await mongoClientPromise;
     return client;
   } catch (error) {
+    activeMongoUri = null;
     mongoClientPromise = null;
     mongoRetryAfter = Date.now() + MONGO_RETRY_COOLDOWN_MS;
     if (!warnedConnectionFailure) {
@@ -200,7 +262,7 @@ export const getMongoClient = async (): Promise<MongoClientInstance | null> => {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown MongoDB connection error";
       console.error(
-        `Failed to connect to MongoDB (${describeUri(env.mongodbUri)}). Falling back to Markdown content. Error: ${errorMessage}`,
+        `MongoDB connection failed (${describeUri(env.mongodbUri)}). Cached readers will preserve the last valid content. Error: ${errorMessage}`,
       );
     }
 
@@ -217,4 +279,19 @@ export const getMongoDatabase = async (): Promise<MongoDatabase | null> => {
 
   const databaseName = env.mongodbDb || getDatabaseFromUri() || undefined;
   return client.db(databaseName);
+};
+
+/**
+ * Public content reads must distinguish an unavailable database from a valid
+ * empty result. Throwing here prevents Next.js from caching local fallback
+ * content as if it had come from MongoDB.
+ */
+export const requireMongoDatabase = async (): Promise<MongoDatabase> => {
+  const database = await getMongoDatabase();
+
+  if (!database) {
+    throw new MongoDatabaseUnavailableError("MongoDB is temporarily unavailable");
+  }
+
+  return database;
 };

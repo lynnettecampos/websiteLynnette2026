@@ -5,7 +5,7 @@ import {
   ensureContentCollectionInitialized,
   isContentCollectionInitialized,
 } from "@/server/content-bootstrap";
-import { getMongoDatabase } from "@/server/mongodb";
+import { getMongoDatabase, requireMongoDatabase } from "@/server/mongodb";
 
 const getClientsInitializationKey = () => `clients:${env.mongodbClientsCollection}:v1`;
 
@@ -98,12 +98,11 @@ const getClientsCollection = async () => {
   return db.collection<ClientDocument>(env.mongodbClientsCollection);
 };
 
-export const fetchClientsFromDatabase = async (): Promise<Client[] | null> => {
-  const collection = await getClientsCollection();
+const getRequiredClientsCollection = async () =>
+  (await requireMongoDatabase()).collection<ClientDocument>(env.mongodbClientsCollection);
 
-  if (!collection) {
-    return null;
-  }
+export const fetchClientsFromDatabase = async (): Promise<Client[]> => {
+  const collection = await getRequiredClientsCollection();
 
   const documents = await collection
     .find({}, { projection: { _id: 0 } })
@@ -114,11 +113,7 @@ export const fetchClientsFromDatabase = async (): Promise<Client[] | null> => {
 };
 
 export const fetchClientBySlug = async (slug: string): Promise<Client | null> => {
-  const collection = await getClientsCollection();
-
-  if (!collection) {
-    return null;
-  }
+  const collection = await getRequiredClientsCollection();
 
   const document = await collection.findOne({ slug }, { projection: { _id: 0 } });
 
@@ -168,9 +163,9 @@ const ensureClientsInitialized = async () => {
   });
 };
 
-export const isClientsCollectionInitialized = async (): Promise<boolean | null> => {
-  const db = await getMongoDatabase();
-  return db ? isContentCollectionInitialized(db, getClientsInitializationKey()) : null;
+export const isClientsCollectionInitialized = async (): Promise<boolean> => {
+  const db = await requireMongoDatabase();
+  return isContentCollectionInitialized(db, getClientsInitializationKey());
 };
 
 export const upsertClient = async (payload: ClientPayload): Promise<Client | null> => {

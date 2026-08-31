@@ -6,62 +6,104 @@ import {
   CONTENT_CACHE_TAGS,
   PUBLIC_CONTENT_REVALIDATE_SECONDS,
 } from "@/lib/content-cache";
+import { createResilientContentReader } from "@/data/resilient-read";
 import { hasDatabaseConfig } from "@/lib/env";
 import { fetchArtistEvents, fetchArtistProfile, fetchPublications } from "@/server/artist";
 
-const getArtistProfileUncached = async (): Promise<ArtistProfile> => {
-  if (!hasDatabaseConfig()) return ARTIST_PROFILE;
+const getArtistProfileFromDatabase = async (): Promise<ArtistProfile> => {
   return (await fetchArtistProfile()) ?? ARTIST_PROFILE;
 };
 
 const getArtistProfileCached = unstable_cache(
-  getArtistProfileUncached,
-  ["public-artist-profile-v1"],
+  getArtistProfileFromDatabase,
+  ["public-artist-profile-v2"],
   {
     revalidate: PUBLIC_CONTENT_REVALIDATE_SECONDS,
     tags: [CONTENT_CACHE_TAGS.artist],
   },
 );
 
-export const getArtistProfile = async (): Promise<ArtistProfile> =>
-  getArtistProfileCached();
+const readArtistProfile = createResilientContentReader(
+  "artist-profile",
+  () => ARTIST_PROFILE,
+);
 
-const getArtistEventsUncached = async (includePrivate = false): Promise<ArtistEvent[]> => {
-  const stored = hasDatabaseConfig() ? await fetchArtistEvents() : null;
-  const events = stored && stored.length > 0 ? stored : ARTIST_EVENTS;
-  return events
+export const getArtistProfile = async (): Promise<ArtistProfile> => {
+  if (!hasDatabaseConfig()) {
+    return ARTIST_PROFILE;
+  }
+
+  return readArtistProfile(getArtistProfileCached);
+};
+
+const sortArtistEvents = (events: ArtistEvent[], includePrivate: boolean): ArtistEvent[] =>
+  [...events]
     .filter((event) => includePrivate || !event.isPrivate)
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+const getArtistEventsFromDatabase = async (includePrivate = false): Promise<ArtistEvent[]> => {
+  const stored = await fetchArtistEvents();
+  return sortArtistEvents(stored, includePrivate);
 };
 
 const getArtistEventsCached = unstable_cache(
-  () => getArtistEventsUncached(false),
-  ["public-artist-events-v1"],
+  () => getArtistEventsFromDatabase(false),
+  ["public-artist-events-v2"],
   {
     revalidate: PUBLIC_CONTENT_REVALIDATE_SECONDS,
     tags: [CONTENT_CACHE_TAGS.events],
   },
 );
 
-export const getArtistEvents = async (includePrivate = false): Promise<ArtistEvent[]> =>
-  includePrivate ? getArtistEventsUncached(true) : getArtistEventsCached();
+const readPublicEvents = createResilientContentReader("artist-events", () =>
+  sortArtistEvents(ARTIST_EVENTS, false),
+);
+const readAllEvents = createResilientContentReader("artist-events:admin", () =>
+  sortArtistEvents(ARTIST_EVENTS, true),
+);
 
-const getPublicationsUncached = async (includePrivate = false): Promise<Publication[]> => {
-  const stored = hasDatabaseConfig() ? await fetchPublications() : null;
-  const publications = stored && stored.length > 0 ? stored : PUBLICATIONS;
-  return publications
+export const getArtistEvents = async (includePrivate = false): Promise<ArtistEvent[]> => {
+  if (!hasDatabaseConfig()) {
+    return sortArtistEvents(ARTIST_EVENTS, includePrivate);
+  }
+
+  return includePrivate
+    ? readAllEvents(() => getArtistEventsFromDatabase(true))
+    : readPublicEvents(getArtistEventsCached);
+};
+
+const sortPublications = (publications: Publication[], includePrivate: boolean): Publication[] =>
+  [...publications]
     .filter((publication) => includePrivate || !publication.isPrivate)
     .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+
+const getPublicationsFromDatabase = async (includePrivate = false): Promise<Publication[]> => {
+  const stored = await fetchPublications();
+  return sortPublications(stored, includePrivate);
 };
 
 const getPublicationsCached = unstable_cache(
-  () => getPublicationsUncached(false),
-  ["public-publications-v2"],
+  () => getPublicationsFromDatabase(false),
+  ["public-publications-v3"],
   {
     revalidate: PUBLIC_CONTENT_REVALIDATE_SECONDS,
     tags: [CONTENT_CACHE_TAGS.publications],
   },
 );
 
-export const getPublications = async (includePrivate = false): Promise<Publication[]> =>
-  includePrivate ? getPublicationsUncached(true) : getPublicationsCached();
+const readPublications = createResilientContentReader("publications", () =>
+  sortPublications(PUBLICATIONS, false),
+);
+const readAllPublications = createResilientContentReader("publications:admin", () =>
+  sortPublications(PUBLICATIONS, true),
+);
+
+export const getPublications = async (includePrivate = false): Promise<Publication[]> => {
+  if (!hasDatabaseConfig()) {
+    return sortPublications(PUBLICATIONS, includePrivate);
+  }
+
+  return includePrivate
+    ? readAllPublications(() => getPublicationsFromDatabase(true))
+    : readPublications(getPublicationsCached);
+};

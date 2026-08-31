@@ -52,22 +52,28 @@ export async function GET(request: Request) {
       );
     }
 
-    const [projectSample, clientSample] = await Promise.all([
-      db.collection("projects").find({}, { projection: { _id: 0 }, limit: 1 }).toArray(),
-      db
-        .collection(env.mongodbClientsCollection)
-        .find({}, { projection: { _id: 0 }, limit: 1 })
-        .toArray(),
-    ]);
+    const [projects, clients, events, publications, profiles, siteDocuments] =
+      await Promise.all([
+        db.collection("projects").countDocuments(),
+        db.collection(env.mongodbClientsCollection).countDocuments(),
+        db.collection("artistEvents").countDocuments(),
+        db.collection("publications").countDocuments(),
+        db.collection("artistProfile").countDocuments(),
+        db.collection("siteContent").countDocuments(),
+      ]);
 
     return NextResponse.json({
       connected: true,
       hasConfig,
       reason: null,
       database,
-      sampleCounts: {
-        projects: projectSample.length,
-        clients: clientSample.length,
+      documentCounts: {
+        projects,
+        clients,
+        events,
+        publications,
+        artistProfile: profiles,
+        siteContent: siteDocuments,
       },
     });
   } catch (error) {

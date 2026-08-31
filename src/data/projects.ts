@@ -7,21 +7,13 @@ import {
   CONTENT_CACHE_TAGS,
   PUBLIC_CONTENT_REVALIDATE_SECONDS,
 } from "@/lib/content-cache";
+import { createResilientContentReader } from "@/data/resilient-read";
 import { hasDatabaseConfig } from "@/lib/env";
 import {
-  fetchProjectBySlug,
   fetchProjectsFromDatabase,
   isProjectsCollectionInitialized,
 } from "@/server/projects";
 
-let warnedProjectFallback = false;
-
-const logProjectFallback = (reason: string) => {
-  if (!warnedProjectFallback) {
-    console.warn(`[projects] Usando contenido local: ${reason}`);
-    warnedProjectFallback = true;
-  }
-};
 
 const sortProjectsByTimeline = (projects: Project[]): Project[] => {
   const score = (project: Project) => {
@@ -56,38 +48,44 @@ const sortProjectsByTimeline = (projects: Project[]): Project[] => {
 const filterPrivate = (projects: Project[], includePrivate: boolean) =>
   includePrivate ? projects : projects.filter((project) => !project.isPrivate);
 
-const getProjectsUncached = async (includePrivate = false): Promise<Project[]> => {
-  const fallback = () => sortProjectsByTimeline(filterPrivate(PROJECTS, includePrivate));
+const getProjectsFallback = (includePrivate: boolean): Project[] =>
+  sortProjectsByTimeline(filterPrivate(PROJECTS, includePrivate));
 
-  if (!hasDatabaseConfig()) {
-    return fallback();
-  }
-
+const getProjectsFromDatabase = async (includePrivate = false): Promise<Project[]> => {
   const [projects, initialized] = await Promise.all([
     fetchProjectsFromDatabase(),
     isProjectsCollectionInitialized(),
   ]);
-
-  if (!projects || initialized === null) {
-    logProjectFallback("no se pudo contactar la base de datos");
-    return fallback();
-  }
 
   const resolvedProjects = mergeFallbackRecordsUntilInitialized(PROJECTS, projects, initialized);
   return sortProjectsByTimeline(filterPrivate(resolvedProjects, includePrivate));
 };
 
 const getPublicProjectsCached = unstable_cache(
-  () => getProjectsUncached(false),
-  ["public-projects-v2"],
+  () => getProjectsFromDatabase(false),
+  ["public-projects-v3"],
   {
     revalidate: PUBLIC_CONTENT_REVALIDATE_SECONDS,
     tags: [CONTENT_CACHE_TAGS.projects],
   },
 );
 
-export const getProjects = async (includePrivate = false): Promise<Project[]> =>
-  includePrivate ? getProjectsUncached(true) : getPublicProjectsCached();
+const readPublicProjects = createResilientContentReader("projects", () =>
+  getProjectsFallback(false),
+);
+const readAllProjects = createResilientContentReader("projects:admin", () =>
+  getProjectsFallback(true),
+);
+
+export const getProjects = async (includePrivate = false): Promise<Project[]> => {
+  if (!hasDatabaseConfig()) {
+    return getProjectsFallback(includePrivate);
+  }
+
+  return includePrivate
+    ? readAllProjects(() => getProjectsFromDatabase(true))
+    : readPublicProjects(getPublicProjectsCached);
+};
 
 export const getProjectsForHome = async (): Promise<Project[]> => {
   const projects = await getProjects();
@@ -126,17 +124,6 @@ export const getProjectBySlug = async (
     return fallbackLookup();
   }
 
-  if (!includePrivate) {
-    const projects = await getProjects();
-    return projects.find((item) => item.slug === slug) ?? null;
-  }
-
-  const project = await fetchProjectBySlug(slug);
-
-  if (project) {
-    return project;
-  }
-
-  const hydratedProjects = await getProjects(true);
-  return hydratedProjects.find((item) => item.slug === slug) ?? null;
+  const projects = await getProjects(includePrivate);
+  return projects.find((item) => item.slug === slug) ?? null;
 };
