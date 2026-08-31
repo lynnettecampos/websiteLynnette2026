@@ -59,6 +59,7 @@
 
 .desktopWordIndex .workCount {
   min-height: auto;
+  font-weight: 700;
   cursor: default;
 }
 
