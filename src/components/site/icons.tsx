@@ -71,3 +71,11 @@ export function CheckIcon({ className, ...props }: IconProps) {
     </svg>
   );
 }
+
+export function PlayIcon({ className, ...props }: IconProps) {
+  return (
+    <svg {...sharedProps} {...props} className={iconClassName(className)}>
+      <path d="M7 4.5 19 12 7 19.5Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}

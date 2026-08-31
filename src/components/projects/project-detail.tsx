@@ -5,7 +5,12 @@ import Link from "next/link";
 import { useState } from "react";
 
 import type { ProjectMenuItem } from "@/components/projects/project-menu";
-import { ArrowLeftIcon, ArrowRightIcon, ArrowUpRightIcon } from "@/components/site/icons";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ArrowUpRightIcon,
+  PlayIcon,
+} from "@/components/site/icons";
 import { useLocale } from "@/components/site/locale-context";
 import type {
   LocalizedValue,
@@ -310,16 +315,13 @@ export function ProjectDetail({ project, categoryLabels, navigation }: ProjectDe
 
       {project.gallery.length > 0 ? (
         <section aria-labelledby="project-images-title">
-          <div className="mb-12 flex items-baseline gap-4 border-t border-foreground/25 pt-3 sm:mb-20">
+          <div className="mb-12 border-t border-foreground/25 pt-3 sm:mb-20">
             <h2
               id="project-images-title"
               className="font-mono text-[10px] uppercase tracking-[0.14em] text-foreground/60 sm:text-xs"
             >
               {translate(locale, LABELS.images)}
             </h2>
-            <span className="font-mono text-[10px] tabular-nums text-foreground/60 sm:text-xs">
-              {String(project.gallery.length).padStart(2, "0")}
-            </span>
           </div>
           <ol className="space-y-14 sm:space-y-24 lg:space-y-36">
             {project.gallery.map((image, index) => (
@@ -385,8 +387,8 @@ export function ProjectDetail({ project, categoryLabels, navigation }: ProjectDe
                   sizes="(min-width: 1280px) 1152px, calc(100vw - 3rem)"
                   className="object-cover opacity-55 transition-opacity duration-200 group-hover:opacity-40"
                 />
-                <span className="relative z-10 flex h-20 w-20 items-center justify-center border border-white/80 font-mono text-xs uppercase tracking-[0.1em] sm:h-28 sm:w-28">
-                  {locale === "es" ? "Ver" : "Play"}
+                <span className="relative z-10 flex size-20 items-center justify-center rounded-full border border-white/80 transition-transform duration-200 group-hover:scale-105 sm:size-28">
+                  <PlayIcon className="size-7 translate-x-[0.08em] sm:size-10" />
                 </span>
               </button>
             )}
