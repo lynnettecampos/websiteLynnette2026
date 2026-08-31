@@ -9,14 +9,23 @@ import { ProjectSelector } from "@/components/projects/project-selector";
 import type { SiteContent } from "@/domain/site";
 import { AVAILABLE_LOCALES, translate } from "@/lib/i18n";
 import { useLocale } from "./locale-context";
+import { ThemeToggle, type SiteTheme } from "./ThemeToggle";
 
 type HeaderProps = {
   navigation: SiteContent["navigation"];
   artistName: string;
   projectsMenu: ProjectMenuItem[];
+  theme: SiteTheme;
+  onThemeChange: (theme: SiteTheme) => void;
 };
 
-export function Header({ navigation, artistName, projectsMenu }: HeaderProps) {
+export function Header({
+  navigation,
+  artistName,
+  projectsMenu,
+  theme,
+  onThemeChange,
+}: HeaderProps) {
   const pathname = usePathname();
   const { locale, setLocale } = useLocale();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -162,24 +171,30 @@ export function Header({ navigation, artistName, projectsMenu }: HeaderProps) {
           })}
         </nav>
 
-        <div className="desktop-locale-switch" aria-label={locale === "es" ? "Idioma" : "Language"}>
-          {AVAILABLE_LOCALES.map((option, index) => {
-            const isSelected = option.code === locale;
+        <div className="desktop-header-tools">
+          <ThemeToggle theme={theme} locale={locale} onThemeChange={onThemeChange} />
+          <div
+            className="desktop-locale-switch"
+            aria-label={locale === "es" ? "Idioma" : "Language"}
+          >
+            {AVAILABLE_LOCALES.map((option, index) => {
+              const isSelected = option.code === locale;
 
-            return (
-              <span key={option.code} className="locale-option">
-                {index > 0 ? <span aria-hidden="true">/</span> : null}
-                <button
-                  type="button"
-                  onClick={() => setLocale(option.code)}
-                  aria-pressed={isSelected}
-                  className={isSelected ? "is-active" : ""}
-                >
-                  {option.label}
-                </button>
-              </span>
-            );
-          })}
+              return (
+                <span key={option.code} className="locale-option">
+                  {index > 0 ? <span aria-hidden="true">/</span> : null}
+                  <button
+                    type="button"
+                    onClick={() => setLocale(option.code)}
+                    aria-pressed={isSelected}
+                    className={isSelected ? "is-active" : ""}
+                  >
+                    {option.label}
+                  </button>
+                </span>
+              );
+            })}
+          </div>
         </div>
 
         <button
@@ -270,24 +285,30 @@ export function Header({ navigation, artistName, projectsMenu }: HeaderProps) {
             })}
           </nav>
 
-          <div className="mobile-locale-switch" aria-label={locale === "es" ? "Idioma" : "Language"}>
-            {AVAILABLE_LOCALES.map((option, index) => {
-              const isSelected = option.code === locale;
+          <div className="mobile-preference-row">
+            <ThemeToggle theme={theme} locale={locale} onThemeChange={onThemeChange} />
+            <div
+              className="mobile-locale-switch"
+              aria-label={locale === "es" ? "Idioma" : "Language"}
+            >
+              {AVAILABLE_LOCALES.map((option, index) => {
+                const isSelected = option.code === locale;
 
-              return (
-                <span key={option.code} className="locale-option">
-                  {index > 0 ? <span aria-hidden="true">/</span> : null}
-                  <button
-                    type="button"
-                    onClick={() => setLocale(option.code)}
-                    aria-pressed={isSelected}
-                    className={isSelected ? "is-active" : ""}
-                  >
-                    {option.label}
-                  </button>
-                </span>
-              );
-            })}
+                return (
+                  <span key={option.code} className="locale-option">
+                    {index > 0 ? <span aria-hidden="true">/</span> : null}
+                    <button
+                      type="button"
+                      onClick={() => setLocale(option.code)}
+                      aria-pressed={isSelected}
+                      className={isSelected ? "is-active" : ""}
+                    >
+                      {option.label}
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
           </div>
         </div>
       ) : null}

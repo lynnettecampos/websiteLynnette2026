@@ -123,7 +123,7 @@
   overscroll-behavior: contain;
   border: 1px solid var(--line);
   background: var(--canvas);
-  box-shadow: 0 0.9rem 2.5rem rgba(21, 21, 19, 0.08);
+  box-shadow: 0 0.9rem 2.5rem var(--shadow);
 }
 
 .indexPanel ol {
@@ -237,7 +237,7 @@
   width: clamp(9rem, 14vw, 13rem);
   border: 1px solid color-mix(in srgb, var(--word-color) 68%, var(--foreground));
   background: var(--canvas);
-  box-shadow: 0 0.9rem 2.5rem rgba(21, 21, 19, 0.1);
+  box-shadow: 0 0.9rem 2.5rem var(--shadow);
   pointer-events: none;
 }
 

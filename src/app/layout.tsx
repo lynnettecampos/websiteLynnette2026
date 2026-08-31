@@ -56,7 +56,14 @@ export default async function RootLayout({
   const projectsMenu = createProjectMenuItems(projects);
 
   return (
-    <html lang="es">
+    <html lang="es" data-theme="light" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("lynnette-site-theme");if(t==="dark"||t==="light"){document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="antialiased">
         <SiteShell
           siteContent={siteContent}
