@@ -3,8 +3,8 @@
   position: relative;
   min-height: 100svh;
   overflow: hidden;
-  background: #050505;
-  color: #f5f3ec;
+  background: var(--background);
+  color: var(--foreground);
 }
 
 .home {
@@ -39,7 +39,7 @@
 
 .workCount {
   margin: 0;
-  color: #a7a59f;
+  color: var(--muted);
   font-size: clamp(0.58rem, 0.75vw, 0.72rem);
   letter-spacing: 0.08em;
   text-align: right;
@@ -47,7 +47,7 @@
 }
 
 .workCount span {
-  color: #f5f3ec;
+  color: var(--foreground);
 }
 
 .desktopWordIndex {
@@ -69,7 +69,7 @@
   gap: 0.28rem 1.1rem;
   margin: 0;
   padding: 0;
-  color: #d0cec8;
+  color: var(--muted);
   font-family: var(--font-mono);
   font-size: clamp(0.62rem, 0.82vw, 0.78rem);
   letter-spacing: 0.045em;
@@ -102,7 +102,7 @@
 .workCount b {
   display: inline-block;
   margin-left: 0.28rem;
-  color: #5d82ff;
+  color: var(--accent);
   font-size: 0.8rem;
   font-weight: 400;
   transition: transform 160ms ease;
@@ -121,8 +121,9 @@
   max-height: min(66svh, 36rem);
   overflow-y: auto;
   overscroll-behavior: contain;
-  border: 1px solid rgba(245, 243, 236, 0.42);
-  background: #0c0c0c;
+  border: 1px solid var(--line);
+  background: var(--canvas);
+  box-shadow: 0 0.9rem 2.5rem rgba(21, 21, 19, 0.08);
 }
 
 .indexPanel ol {
@@ -132,7 +133,7 @@
 }
 
 .indexPanel li + li {
-  border-top: 1px solid rgba(245, 243, 236, 0.16);
+  border-top: 1px solid var(--line);
 }
 
 .indexPanel a {
@@ -142,7 +143,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.55rem 0.8rem;
-  color: #d0cec8;
+  color: var(--muted);
   font-family: var(--font-mono);
   font-size: clamp(0.68rem, 0.9vw, 0.82rem);
   line-height: 1.35;
@@ -151,7 +152,7 @@
 
 .indexPanel a > span:first-child,
 .indexPanel time {
-  color: #77756f;
+  color: var(--muted);
   font-size: 0.62rem;
 }
 
@@ -186,12 +187,12 @@
   display: grid;
   min-width: 0;
   place-items: center;
-  color: #f5f3ec;
+  color: var(--foreground);
   font-family: var(--font-sans);
   font-size: var(--word-search-font-size);
   font-weight: 600;
   line-height: 1;
-  opacity: 0.48;
+  opacity: 0.42;
   transform: scale(1);
   transition: color 220ms ease, opacity 220ms ease, transform 220ms ease;
 }
@@ -224,7 +225,7 @@
 
 .wordLink:focus-visible {
   border: 1px solid currentColor;
-  outline: 1px solid #f5f3ec;
+  outline: 1px solid var(--foreground);
   outline-offset: 2px;
 }
 
@@ -234,8 +235,9 @@
   right: 0;
   bottom: clamp(0.5rem, 2vw, 2rem);
   width: clamp(9rem, 14vw, 13rem);
-  border: 1px solid color-mix(in srgb, var(--word-color) 72%, #f5f3ec);
-  background: #050505;
+  border: 1px solid color-mix(in srgb, var(--word-color) 68%, var(--foreground));
+  background: var(--canvas);
+  box-shadow: 0 0.9rem 2.5rem rgba(21, 21, 19, 0.1);
   pointer-events: none;
 }
 
@@ -243,8 +245,8 @@
   position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  border-bottom: 1px solid color-mix(in srgb, var(--word-color) 72%, #f5f3ec);
-  background: #141414;
+  border-bottom: 1px solid color-mix(in srgb, var(--word-color) 68%, var(--foreground));
+  background: var(--background);
 }
 
 .previewImage {
@@ -270,7 +272,7 @@
   display: flex;
   justify-content: space-between;
   margin-top: 0.35rem;
-  color: #a7a59f;
+  color: var(--muted);
 }
 
 .help {
@@ -281,7 +283,7 @@
   justify-content: space-between;
   gap: 2rem;
   padding-right: 3.7rem;
-  color: #8f8d87;
+  color: var(--muted);
   font-size: clamp(0.54rem, 0.68vw, 0.66rem);
   letter-spacing: 0.035em;
   line-height: 1.45;
@@ -297,7 +299,7 @@
 }
 
 .revealed {
-  color: #f5f3ec;
+  color: var(--foreground);
 }
 
 .bioPortal {
@@ -309,8 +311,8 @@
   width: 2.75rem;
   height: 2.75rem;
   place-items: center;
-  border: 1px solid rgba(245, 243, 236, 0.65);
-  color: #f5f3ec;
+  border: 1px solid color-mix(in srgb, var(--foreground) 52%, transparent);
+  color: var(--foreground);
   font-size: 1.2rem;
   text-decoration: none;
 }
@@ -321,8 +323,8 @@
 }
 
 .bioPortal:hover {
-  border-color: #5d82ff;
-  color: #5d82ff;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .emptyHome {
@@ -345,7 +347,7 @@
 
 .emptyMessage p:last-child {
   margin-top: 0.8rem;
-  color: #8f8d87;
+  color: var(--muted);
   font-family: var(--font-mono);
   font-size: clamp(0.7rem, 1vw, 0.9rem);
   letter-spacing: 0;
@@ -360,13 +362,13 @@
 
 @keyframes idle-word-reveal {
   0% {
-    color: #f5f3ec;
-    opacity: 0.48;
+    color: var(--foreground);
+    opacity: 0.42;
     transform: scale(1);
   }
 
   50% {
-    color: color-mix(in srgb, var(--word-color) 50%, #f5f3ec);
+    color: color-mix(in srgb, var(--word-color) 50%, var(--foreground));
     opacity: 0.74;
     transform: scale(1);
   }
